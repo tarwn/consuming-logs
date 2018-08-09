@@ -1,7 +1,9 @@
-import config from './config';
-import Store from './store/store';
-import Producer from './producer';
-import { KafkaClient, HighLevelConsumer } from 'node-kafka';
+const config  = require('./config');
+const Store = require('./store/store');
+const Producer = require('./producer');
+const kafka = require('kafka-node');
+const KafkaClient = kafka.KafkaClient;
+const ConsumerGroup = kafka.ConsumerGroup;
 
 const producer = new Producer(config);
 producer.initialize();
@@ -21,8 +23,11 @@ process.once('SIGINT', () => {
   
 
 // log events to console
-const client = new KafkaClient({ kafkaHost: kafka_host });
-const consumer = new HighLevelConsumer(client, [{ topic: kafka_topic }], {});
+const options = {
+    kafkaHost: config.kafka_host,
+    fromOffset: 'earliest'
+};
+const consumer = new ConsumerGroup(options, [config.kafka_topic ]);
 consumer.on('message', function (message) {
     console.log('LOG: ' + message);
 });

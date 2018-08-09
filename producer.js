@@ -1,6 +1,8 @@
-import { KafkaClient, HighLevelProducer } from 'node-kafka';
+const kafka = require('kafka-node');
+const KafkaClient = kafka.KafkaClient;
+const HighLevelConsumer = kafka.HighLevelConsumer;
 
-export default class Producer {
+module.exports = class Producer {
     constructor(config) {
         this.client = new KafkaClient({ kafkaHost: config.kafka_host });
         this.producer = null;

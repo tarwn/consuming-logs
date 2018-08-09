@@ -1,4 +1,4 @@
-export default class Store {
+module.exports = class Store {
     constructor(config, database, publisher) {
         this._database = database;
         this._publisher = publisher;
