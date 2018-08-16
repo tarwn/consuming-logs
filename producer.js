@@ -1,38 +1,31 @@
 const kafka = require('kafka-node');
 const KafkaClient = kafka.KafkaClient;
-const HighLevelConsumer = kafka.HighLevelConsumer;
+const HighLevelProducer = kafka.HighLevelProducer;
 
 module.exports = class Producer {
     constructor(config) {
-        this.client = new KafkaClient({ kafkaHost: config.kafka_host });
-        this.producer = null;
-        this.topic = { topic: config.kafka_topic, partitions: 2, replicationFactor: 2 }
+        this._client = new KafkaClient({ kafkaHost: config.kafka_host });
+        this._producer = null;
+
+        this._topicName = config.kafka_topic;
+        // waiting on node-kafka > 2.6.1: update manually via kafka manager
+        //this._topic = { topic: config.kafka_topic, partitions: 2, replicationFactor: 2 }
+        this._topic = config.kafka_topic;
     }
 
     initialize() {
-        return Promise.resolve()
+        this._whenInitialized = Promise.resolve()
             .then(() => this._createTopics())
             .then(() => this._createProducer());
+        
+        return this._whenInitialized;
     }
 
     publish(message) {
-        return new Promise((resolve, reject) => {
-            if (this.producer == null) {
-                reject(new Error('Producer is not initialized'));
-            }
-
-            const payloads = [
-                { topic: this.topic.topic, message: [JSON.stringify(message)] }
-            ];
-            this.producer.send(payloads, (err, data) => {
-                if (!err) {
-                    resolve();
-                }
-                else {
-                    reject(err);
-                }
+        return this._whenInitialized
+            .then(() => {
+                return this._sendMessage(message);
             });
-        });
     }
 
     dispose() {
@@ -40,10 +33,11 @@ module.exports = class Producer {
     }
 
     _createTopics() {
-        return new Promise((resolve, reject) => { 
-            this.client.createTopics((error, result) => { 
+        return new Promise((resolve, reject) => {
+            this._client.createTopics([ this._topic ], (error, result) => { 
                 if (error) {
-                    reject(result);
+                    console.err(error);
+                    reject(error);
                 }
                 else {
                     resolve();
@@ -54,13 +48,31 @@ module.exports = class Producer {
 
     _createProducer() {
         return new Promise((resolve, reject) => {
-            this.producer = new kafka.HighLevelProducer(this.client);
-            this.producer.on('ready', () => {
+            this._producer = new HighLevelProducer(this._client);
+            this._producer.on('ready', () => {
                 resolve();
             });
 
-            this.producer.on('error', (err) => {
-                console.log('Producer: ' + err);
+            this._producer.on('error', (err) => {
+                console.err(err);
+                reject(err);
+            });
+        });
+    }
+
+    _sendMessage(message) {
+        return new Promise((resolve, reject) => {
+            const payloads = [
+                { topic: this._topicName, messages: [JSON.stringify(message)] }
+            ];
+            this._producer.send(payloads, (err, data) => {
+                if (!err) {
+                    resolve();
+                }
+                else {
+                    console.err(err);
+                    reject(err);
+                }
             });
         });
     }
