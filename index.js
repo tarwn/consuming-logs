@@ -14,12 +14,7 @@ producer.initialize()
         process.exit(-2);
     });
 
-const database = {
-    getInventory: (productId) => { },
-    adjustInventory: (productId, adjustmentAmount) => { }
-};
-
-const store = new Store(config, database, producer);
+const store = new Store(config, producer);
 const timer = setInterval(() => store.runInterval(), 1000);
 
 process.once('SIGINT', () => {
