@@ -3,6 +3,6 @@ module.exports = {
     kafka_topic: 'store-topic',
 
     minimumOrderSize: 5,
-    productionCapacity: 10,
+    productionLineCapacity: 10,
     productionLines: 1
 };

@@ -1,6 +1,6 @@
 const config = require('./config');
-const Plant = require('./src/plant');
-const Producer = require('./producer');
+const Simulator = require('./src/simulator');
+const Producer = require('./src/kafka/producer');
 const { ConsumerGroup } = require('kafka-node');
 
 console.log(`
@@ -21,8 +21,8 @@ producer.initialize()
         process.exit(-2);
     });
 
-const plant = new Plant(config, producer);
-const timer = setInterval(() => plant.runInterval(), 1000);
+const simulator = new Simulator(config, producer);
+const timer = setInterval(() => simulator.runInterval(), 1000);
 
 process.once('SIGINT', () => {
     clearInterval(timer);

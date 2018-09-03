@@ -1,7 +1,4 @@
-const kafka = require('kafka-node');
-
-const KafkaClient = kafka.KafkaClient;
-const HighLevelProducer = kafka.HighLevelProducer;
+const { KafkaClient, HighLevelProducer } = require('kafka-node');
 
 module.exports = class Producer {
     constructor(config) {
@@ -22,10 +19,15 @@ module.exports = class Producer {
         return this._whenInitialized;
     }
 
-    publish(message) {
+    publish(events) {
         return this._whenInitialized
             .then(() => {
-                return this._sendMessage(message);
+                if (Array.isArray(events)) {
+                    return this._sendMessage(events);
+                }
+                else {
+                    return this._sendMessage([events]);
+                }
             });
     }
 
@@ -64,10 +66,11 @@ module.exports = class Producer {
         });
     }
 
-    _sendMessage(message) {
+    _sendMessage(events) {
         return new Promise((resolve, reject) => {
+            const messages = events.map(e => JSON.stringify(e));
             const payloads = [
-                { topic: this._topicName, messages: [JSON.stringify(message)] }
+                { topic: this._topicName, messages }
             ];
             this._producer.send(payloads, (err, data) => {
                 if (!err) {
