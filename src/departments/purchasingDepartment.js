@@ -1,6 +1,7 @@
 
 const PurchaseOrder = require('../dtos/purchaseOrder');
 const PurchaseOrderPlacedEvent = require('../events/purchaseOrderPlaced');
+const DepartmentDecision = require('../departmentDecision');
 
 module.exports = class PurchasingDepartment {
     constructor(plantConfig, centralDatabase) {
@@ -20,16 +21,27 @@ module.exports = class PurchasingDepartment {
             this._centralDatabase.openPurchaseOrders
         );
 
-        return partsToOrder.map((part) => {
-            const catalogEntry = this._centralDatabase.partsCatalog.find(entry => entry.partNumber === part.partNumber);
-            if (catalogEntry == null) {
-                throw new Error(`Parts Catalog entry not found for part '${part.partNumber}' when looking up price for Purchase Order`);
-            }
+        const actions = partsToOrder.map((part) => {
+            const order = PurchasingDepartment._createPurchaseOrder(
+                part.partNumber,
+                part.quantity,
+                this._centralDatabase.partsCatalog
+            );
 
-            const bestPrice = catalogEntry.getBestPriceQuote();
-            const order = new PurchaseOrder(null, part.partNumber, part.quantity, bestPrice.price);
-            return PurchasingDepartment._placePurchaseOrderAction(order);
+            return (db, producer) => {
+                db.placePurchaseOrder(order);
+                return producer.publish(new PurchaseOrderPlacedEvent(order));
+            };
         });
+        return new DepartmentDecision(actions);
+    }
+
+    payForReceivedPurchaseOrders() {
+        return DepartmentDecision.noAction();
+    }
+
+    billForShippedSalesOrders() {
+        return DepartmentDecision.noAction();
     }
 
     static _calculateNecessaryParts(productionOrders, productCatalog) {
@@ -84,18 +96,13 @@ module.exports = class PurchasingDepartment {
         return partsToOrder;
     }
 
-    static _placePurchaseOrderAction(purchaseOrder) {
-        return (db, producer) => {
-            db.placePurchaseOrder(purchaseOrder);
-            return producer.publish(new PurchaseOrderPlacedEvent(purchaseOrder));
-        };
-    }
+    static _createPurchaseOrder(partNumber, quantity, partsCatalog) {
+        const catalogEntry = partsCatalog.find(entry => entry.partNumber === partNumber);
+        if (catalogEntry == null) {
+            throw new Error(`Parts Catalog entry not found for part '${partNumber}' when looking up price for Purchase Order`);
+        }
 
-    payForReceivedPurchaseOrders() {
-        return [];
-    }
-
-    billForShippedSalesOrders() {
-        return [];
+        const bestPrice = catalogEntry.getBestPriceQuote();
+        return new PurchaseOrder(null, partNumber, quantity, bestPrice.price);
     }
 };

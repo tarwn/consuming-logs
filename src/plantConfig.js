@@ -8,13 +8,13 @@ module.exports = class PlantConfig {
         this.productionLineCapacity = config.productionLineCapacity;
 
         // product catalog
-        this.productCatalog = [
+        this.productCatalog = config.productCatalog || [
             {
                 partNumber: 'ABC123', name: 'Sample Part 1', unitPrice: 1.23, bom: { AB: 2, C123: 4 }
             }
         ];
 
-        this.partsCatalog = [
+        this.partsCatalog = config.partsCatalog || [
             { partNumber: 'AB', unitPrice: 0.10 },
             { partNumber: 'C123', unitPrice: 0.15 }
         ];

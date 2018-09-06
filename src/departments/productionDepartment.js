@@ -1,3 +1,5 @@
+const DepartmentDecision = require('../departmentDecision');
+
 module.exports = class ProductionDepartment {
     constructor(plantConfig, centralDatabase) {
         this._config = plantConfig;
@@ -5,6 +7,6 @@ module.exports = class ProductionDepartment {
     }
 
     runPlannedProductionOrders() {
-        return [];
+        return DepartmentDecision.noAction();
     }
 };

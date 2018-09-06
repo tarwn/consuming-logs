@@ -1,8 +1,8 @@
 const BaseEvent = require('./baseEvent');
 
-module.exports = class PurchaseOrderUpdatedEvent extends BaseEvent {
+module.exports = class PurchaseOrderShipmentUpdatedEvent extends BaseEvent {
     constructor(purchaseOrder) {
-        super('PurchaseOrderUpdated');
+        super('PurchaseOrderShipmentUpdated');
         this.purchaseOrder = purchaseOrder;
     }
 };

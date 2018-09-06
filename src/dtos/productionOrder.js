@@ -13,4 +13,8 @@ module.exports = class ProductionOrder {
         }
         this.productionOrderNumber = productionOrderNumber;
     }
+
+    increaseCompletedQuantity(count) {
+        this.completedQuantity += count;
+    }
 };

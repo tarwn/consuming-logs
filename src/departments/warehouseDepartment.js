@@ -1,7 +1,7 @@
 const PartsInventoryIncreasedEvent = require('../events/partsInventoryIncreased');
 const PurchaseOrderReceivedEvent = require('../events/purchaseOrderReceived');
-const PurchaseOrderUpdatedEvent = require('../events/purchaseOrderUpdated');
-
+const PurchaseOrderShipmentUpdatedEvent = require('../events/purchaseOrderShipmentUpdated');
+const DepartmentDecision = require('../departmentDecision');
 
 module.exports = class WarehouseDepartment {
     constructor(plantConfig, centralDatabase) {
@@ -10,46 +10,34 @@ module.exports = class WarehouseDepartment {
     }
 
     receivePurchasedParts() {
-        return this._centralDatabase.openPurchaseOrders.map((po) => {
-            if (!po.hasOrderArrived()) {
-                return null;
-            }
-            else {
-                return WarehouseDepartment._receivePurchaseOrderAction(po);
-            }
-        });
-    }
-
-    static _receivePurchaseOrderAction(purchaseOrder) {
-        return (db, producer) => {
-            const newTotal = db.receivePurchaseOrder(purchaseOrder);
-            return producer.publish([
-                new PurchaseOrderReceivedEvent(purchaseOrder),
-                new PartsInventoryIncreasedEvent(purchaseOrder.partNumber, purchaseOrder.quantity, newTotal)
-            ]);
-        };
+        const actions = this._centralDatabase.openPurchaseOrders
+            .filter(po => po.hasOrderArrived())
+            .map((po) => {
+                return (db, producer) => {
+                    const newTotal = db.receivePurchaseOrder(po);
+                    return producer.publish([
+                        new PurchaseOrderReceivedEvent(po),
+                        new PartsInventoryIncreasedEvent(po.partNumber, po.quantity, newTotal)
+                    ]);
+                };
+            });
+        return new DepartmentDecision(actions);
     }
 
     shipCompletedSalesOrders() {
-        return [];
+        return DepartmentDecision.noAction();
     }
 
     updatePendingPurchaseOrders() {
-        return this._centralDatabase.openPurchaseOrders.map((po) => {
-            if (!po.hasOrderArrived()) {
-                return WarehouseDepartment._updatePurchaseOrderAction(po);
-            }
-            else {
-                return null;
-            }
-        });
-    }
-
-    static _updatePurchaseOrderAction(purchaseOrder) {
-        return (db, producer) => {
-            purchaseOrder.decrementShipTime();
-            db.updatePurchaseOrder(purchaseOrder);
-            return producer.publish(new PurchaseOrderUpdatedEvent(purchaseOrder));
-        };
+        const actions = this._centralDatabase.openPurchaseOrders
+            .filter(po => !po.hasOrderArrived())
+            .map((po) => {
+                return (db, producer) => {
+                    po.decrementShipTime();
+                    db.updatePurchaseOrder(po);
+                    return producer.publish(new PurchaseOrderShipmentUpdatedEvent(po));
+                };
+            });
+        return new DepartmentDecision(actions);
     }
 };

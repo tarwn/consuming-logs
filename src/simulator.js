@@ -94,14 +94,6 @@ module.exports = class Simulator {
             warehouse.updatePendingPurchaseOrders()
         ];
 
-        function flatten(arr) {
-            // flatten and then misuse filter to empty null items
-            return arr.reduce((acc, val) => acc.concat(val), [])
-                .filter(f => f);
-        }
-
-        // start executing the decisions, return array of promises
-        return flatten(decisions)
-            .map(d => d(this._database, this._producer));
+        return decisions.map(d => d.executeAll(this._database, this._producer));
     }
 };

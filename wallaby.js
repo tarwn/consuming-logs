@@ -2,7 +2,7 @@ module.exports = () => {
     return {
         files: [
             'src/**/*.js',
-            '!src/**/*.test.js'
+            'tests/fakeProducer.js'
         ],
         tests: [
             'tests/**/*.test.js'

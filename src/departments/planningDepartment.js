@@ -1,4 +1,5 @@
 const ProductionOrderPlannedEvent = require('../events/productionOrderPlanned');
+const DepartmentDecision = require('../departmentDecision');
 
 module.exports = class PlanningDepartment {
     constructor(plantConfig, centralDatabase) {
@@ -7,15 +8,12 @@ module.exports = class PlanningDepartment {
     }
 
     planUnscheduledProductionOrders() {
-        return this._centralDatabase.unscheduledProductionOrders.map((order) => {
-            return PlanningDepartment._planOrdersAction(order);
+        const actions = this._centralDatabase.unscheduledProductionOrders.map((order) => {
+            return (db, producer) => {
+                db.planProductionOrder(order);
+                return producer.publish(new ProductionOrderPlannedEvent(order));
+            };
         });
-    }
-
-    static _planOrdersAction(productionOrder) {
-        return (db, producer) => {
-            db.planProductionOrder(productionOrder);
-            return producer.publish(new ProductionOrderPlannedEvent(productionOrder));
-        };
+        return new DepartmentDecision(actions);
     }
 };
