@@ -124,27 +124,3 @@ describe('orderPartsForPlannedOrders', () => {
         expect(producer.messages).toHaveLength(2);
     });
 });
-
-describe('payForReceivedPurchaseOrders', () => {
-    test('no decisions yet', () => {
-        const config = getTestConfig();
-        const db = new CentralDatabase(config);
-        const dept = new PurchasingDepartment(config, db);
-
-        const decision = dept.payForReceivedPurchaseOrders();
-
-        expect(decision.getActionCount()).toBe(0);
-    });
-});
-
-describe('billForShippedSalesOrders', () => {
-    test('no decisions yet', () => {
-        const config = getTestConfig();
-        const db = new CentralDatabase(config);
-        const dept = new PurchasingDepartment(config, db);
-
-        const decision = dept.billForShippedSalesOrders();
-
-        expect(decision.getActionCount()).toBe(0);
-    });
-});

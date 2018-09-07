@@ -1,5 +1,6 @@
 const CentralDatabase = require('./centralDatabase');
 const PlantConfig = require('./plantConfig');
+const FinanceDepartment = require('./departments/financeDepartment');
 const PlanningDepartment = require('./departments/planningDepartment');
 const ProductionDepartment = require('./departments/productionDepartment');
 const PurchasingDepartment = require('./departments/purchasingDepartment');
@@ -13,6 +14,7 @@ module.exports = class Simulator {
         this._database = new CentralDatabase(this._config);
 
         this._departments = {
+            finance: new FinanceDepartment(this._config, this._database),
             planning: new PlanningDepartment(this._config, this._database),
             production: new ProductionDepartment(this._config, this._database),
             purchasing: new PurchasingDepartment(this._config, this._database),
@@ -37,8 +39,14 @@ module.exports = class Simulator {
         this._intervalIsRunning = true;
         this._intervalCount++;
 
-        return this._buildInterval()
-            .then((actions) => {
+        return Promise.resolve()
+            .then(() => {
+                const actions = this._executeBusinessDecisions();
+
+                if (this._intervalCount % 10 === 0) {
+                    actions.push(this._producer.publish(new HeartbeatEvent(Date.now())));
+                }
+
                 return Promise.all(actions);
             })
             .then(() => {
@@ -50,47 +58,29 @@ module.exports = class Simulator {
             });
     }
 
-    _buildInterval() {
-        return new Promise((resolve, reject) => {
-            try {
-                const actions = [];
-                if (this._intervalCount % 10 === 0) {
-                    actions.push(this._producer.publish(new HeartbeatEvent(Date.now())));
-                }
-
-                const businessActions = this._calculateBusinessDecisions();
-                businessActions.forEach(a => actions.push(a));
-
-                resolve(actions);
-            }
-            catch (err) {
-                reject(err);
-            }
-        });
-    }
-
-    _calculateBusinessDecisions() {
+    _executeBusinessDecisions() {
         const {
             sales,
             planning,
             purchasing,
             warehouse,
+            finance,
             production
         } = this._departments;
 
         // decisions return un-executed actions (that return promises)
         //  everyone looks at the database at the beginning of the turn to decide what to do,
         //  then once everyone has decided on their actions we'll run through and execute them
-        //  all pass them back for the resulting promises to be waited on
+        //  as promises
         const decisions = [
             sales.generateOrdersIfCapacityIsAvailable(),
             planning.planUnscheduledProductionOrders(),
             purchasing.orderPartsForPlannedOrders(),
             warehouse.receivePurchasedParts(),
-            purchasing.payForReceivedPurchaseOrders(),
+            finance.payForReceivedPurchaseOrders(),
             production.runPlannedProductionOrders(),
             warehouse.shipCompletedSalesOrders(),
-            purchasing.billForShippedSalesOrders(),
+            finance.billForShippedSalesOrders(),
             warehouse.updatePendingPurchaseOrders()
         ];
 

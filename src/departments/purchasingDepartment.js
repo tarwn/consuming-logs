@@ -36,14 +36,6 @@ module.exports = class PurchasingDepartment {
         return new DepartmentDecision(actions);
     }
 
-    payForReceivedPurchaseOrders() {
-        return DepartmentDecision.noAction();
-    }
-
-    billForShippedSalesOrders() {
-        return DepartmentDecision.noAction();
-    }
-
     static _calculateNecessaryParts(productionOrders, productCatalog) {
         const necessaryParts = {};
         productionOrders.forEach((po) => {

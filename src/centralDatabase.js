@@ -7,13 +7,14 @@ module.exports = class CentralDatabase {
         this.productionLines = plantConfig.productionLines;
         this.productionLineCapacity = plantConfig.productionLineCapacity;
 
+        this.cash = plantConfig.cash || 0;
         this.financialLedger = [];
         this.partsInventory = {};
         this.finishedInventory = {};
         this.openSalesOrders = [];
         this.closedSalesOrders = [];
         this.openPurchaseOrders = [];
-        // this.shippedPurchaseOrders = [];
+        this.unbilledPurchaseOrders = [];
         this.closedPurchaseOrders = [];
         this.scheduledProductionOrders = [];
         this.unscheduledProductionOrders = [];
@@ -46,7 +47,7 @@ module.exports = class CentralDatabase {
             openSalesOrders: this.openSalesOrders.length,
             closedSalesOrders: this.closedSalesOrders.length,
             openPurchaseOrders: this.openPurchaseOrders.length,
-            // shippedPurchaseOrders: this.shippedPurchaseOrders.length,
+            unbilledPurchaseOrders: this.unbilledPurchaseOrders.length,
             closedPurchaseOrders: this.closedSalesOrders.length,
             scheduledProductionOrders: this.scheduledProductionOrders.length,
             unscheduledProductionOrders: this.unscheduledProductionOrders.length,
@@ -113,6 +114,7 @@ module.exports = class CentralDatabase {
 
         if (orderIndex > -1) {
             this.closedPurchaseOrders.push(purchaseOrder);
+            this.unbilledPurchaseOrders.push(purchaseOrder);
             this.openPurchaseOrders.splice(orderIndex, 1);
         }
         else {
@@ -125,5 +127,25 @@ module.exports = class CentralDatabase {
         }
         this.partsInventory[purchaseOrder.partNumber] += purchaseOrder.quantity;
         return this.partsInventory[purchaseOrder.partNumber];
+    }
+
+    payPurchaseOrder(purchaseOrder) {
+        const orderIndex = this.unbilledPurchaseOrders.findIndex((o) => {
+            return o.purchaseOrderNumber === purchaseOrder.purchaseOrderNumber;
+        });
+
+        if (orderIndex > -1) {
+            this.unbilledPurchaseOrders.splice(orderIndex, 1);
+        }
+        else {
+            throw new Error(`Specific production order '${purchaseOrder.purchaseOrderNumber}' is not in the unbilled orders`);
+        }
+
+        this.financialLedger.push({
+            amount: -1 * purchaseOrder.totalPrice,
+            type: 'purchaseOrder',
+            data: purchaseOrder
+        });
+        this.cash += -1 * purchaseOrder.totalPrice;
     }
 };
