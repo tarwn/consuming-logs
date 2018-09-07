@@ -2,7 +2,8 @@ module.exports = () => {
     return {
         files: [
             'src/**/*.js',
-            'tests/fakeProducer.js'
+            'tests/fakeProducer.js',
+            'tests/customMatchers.js'
         ],
         tests: [
             'tests/**/*.test.js'
@@ -14,6 +15,11 @@ module.exports = () => {
 
         testFramework: 'jest',
 
-        debug: true
+        debug: true,
+
+        setup: (wallaby) => {
+            const jestConfig = require('./package.json').jest;
+            wallaby.testFramework.configure(jestConfig);
+        }
     };
 };

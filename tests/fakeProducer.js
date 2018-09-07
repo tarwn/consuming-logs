@@ -5,9 +5,10 @@ module.exports = class FakeProducer {
 
     publish(message) {
         if (Array.isArray(message)) {
-            message.forEach(this.messages.push);
+            message.filter(f => f != null)
+                .forEach(f => this.messages.push(f));
         }
-        else {
+        else if (message != null) {
             this.messages.push(message);
         }
     }
