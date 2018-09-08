@@ -17,4 +17,12 @@ module.exports = class ProductionOrder {
     increaseCompletedQuantity(count) {
         this.completedQuantity += count;
     }
+
+    getRemainingQuantity() {
+        return this.orderQuantity - this.completedQuantity;
+    }
+
+    get isComplete() {
+        return this.orderQuantity === this.completedQuantity;
+    }
 };

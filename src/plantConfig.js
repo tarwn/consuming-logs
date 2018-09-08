@@ -5,7 +5,8 @@ module.exports = class PlantConfig {
         this.minimumOrderSize = config.minimumOrderSize || 1;
 
         // configs w/out defaults
-        this.productionLineCapacity = config.productionLineCapacity;
+        this.productionCapacityPerInterval = config.productionCapacityPerInterval;
+        this.productionScrapPercentage = config.productionScrapPercentage || 0;
 
         // product catalog
         this.productCatalog = config.productCatalog || [
@@ -18,5 +19,41 @@ module.exports = class PlantConfig {
             { partNumber: 'AB', unitPrice: 0.10 },
             { partNumber: 'C123', unitPrice: 0.15 }
         ];
+    }
+
+    get isValid() {
+        const requiredFields = ['productionCapacityPerInterval', 'productCatalog', 'partsCatalog'];
+
+        return !requiredFields.some(f => !PlantConfig._isFieldValid(this[f]));
+    }
+
+    get validationErrors() {
+        const requiredFields = ['productionCapacityPerInterval', 'productCatalog', 'partsCatalog'];
+        return requiredFields.filter(f => !PlantConfig._isFieldValid(this[f]))
+            .map(f => PlantConfig._fieldValidationError(f, this[f]));
+    }
+
+    static _isFieldValid(value) {
+        if (value == null) {
+            return false;
+        }
+
+        if (Array.isArray(value) && value.length === 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    static _fieldValidationError(fieldName, value) {
+        if (value == null) {
+            return `${fieldName} is null`;
+        }
+
+        if (Array.isArray(value) && value.length === 0) {
+            return `${fieldName} is an empty array`;
+        }
+
+        return `${fieldName} has found a new way to break validation. It's alive...`;
     }
 };

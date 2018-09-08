@@ -12,6 +12,7 @@ const DOUBLE_PART_PRODUCT = 'fg-2';
 
 function getTestConfig() {
     return new PlantConfig({
+        productionCapacityPerInterval: 10,
         productCatalog: [
             {
                 partNumber: SINGLE_PART_PRODUCT, name: 'FG w/ 1 part', unitPrice: 1.23, bom: { 'raw-1': 1 }

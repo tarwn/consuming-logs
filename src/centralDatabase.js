@@ -4,13 +4,18 @@ const RawPart = require('./dtos/rawPart');
 
 module.exports = class CentralDatabase {
     constructor(plantConfig) {
+        if (!plantConfig.isValid) {
+            throw new Error(`Configuration is not valid: ${plantConfig.validationErrors.join(',')}`);
+        }
+
         this.productionLines = plantConfig.productionLines;
-        this.productionLineCapacity = plantConfig.productionLineCapacity;
+        this.productionCapacityPerInterval = plantConfig.productionCapacityPerInterval;
 
         this.cash = plantConfig.cash || 0;
         this.financialLedger = [];
         this.partsInventory = {};
         this.finishedInventory = {};
+        this.scrappedInventory = {};
         this.openSalesOrders = [];
         this.closedSalesOrders = [];
         this.openPurchaseOrders = [];
@@ -56,13 +61,20 @@ module.exports = class CentralDatabase {
     }
 
     get maximumProductionCapacity() {
-        return this.productionLines * this.productionLineCapacity;
+        return this.productionLines * this.productionCapacityPerInterval;
     }
 
     getAvailableProductionScheduleCapacity() {
         const calculateUsedCapacity = (total, productionOrder) => {
             return total + (productionOrder.orderQuantity - productionOrder.completedQuantity);
         };
+
+        // how do you know a thing breaks frequently despite tests? yeah...
+        // console.log({
+        //     maximumProductionCapacity: this.maximumProductionCapacity,
+        //     scheduled: this.scheduledProductionOrders.reduce(calculateUsedCapacity, 0),
+        //     unscheduled: this.unscheduledProductionOrders
+        // });
 
         return this.maximumProductionCapacity -
             this.scheduledProductionOrders.reduce(calculateUsedCapacity, 0) -
@@ -147,5 +159,43 @@ module.exports = class CentralDatabase {
             data: purchaseOrder
         });
         this.cash += -1 * purchaseOrder.totalPrice;
+    }
+
+    produceFinishedGoods(productionOrderNumber, partNumber, quantity) {
+        const order = this.scheduledProductionOrders
+            .find(o => o.productionOrderNumber === productionOrderNumber);
+
+        if (order == null) {
+            throw new Error(`Production order ${productionOrderNumber} cannot be produced against because it is not scheduled`);
+        }
+
+        if (order.partNumber !== partNumber) {
+            throw new Error(`Production order ${productionOrderNumber} expected ${order.partNumber} but you produced ${quantity} of ${partNumber}`);
+        }
+
+        order.increaseCompletedQuantity(quantity);
+
+        // may split these into two department actions?
+        this.storeFinishedGoods(order.partNumber, quantity);
+
+        return {
+            totalInventory: this.finishedInventory[order.partNumber],
+            order,
+            isComplete: order.isComplete
+        };
+    }
+
+    storeFinishedGoods(partNumber, quantity) {
+        if (!this.finishedInventory[partNumber]) {
+            this.finishedInventory[partNumber] = 0;
+        }
+        this.finishedInventory[partNumber] += quantity;
+    }
+
+    scrapFinishedGoods(partNumber, quantity) {
+        if (!this.scrappedInventory[partNumber]) {
+            this.scrappedInventory[partNumber] = 0;
+        }
+        this.scrappedInventory[partNumber] += quantity;
     }
 };

@@ -6,7 +6,7 @@ const SalesOrder = require('../src/dtos/salesOrder');
 function getPlantConfig(data) {
     const defaults = data || {};
     return new PlantConfig({
-        productionLineCapacity: defaults.productionLineCapacity || 10,
+        productionCapacityPerInterval: defaults.productionCapacityPerInterval || 10,
         productionLines: defaults.productionLines || 1
     });
 }
@@ -14,7 +14,7 @@ function getPlantConfig(data) {
 describe('available production schedule', () => {
     test('nothing scheduled or unscheduled: all capacity available', () => {
         const db = new CentralDatabase(getPlantConfig({
-            productionLineCapacity: 10,
+            productionCapacityPerInterval: 10,
             productionLines: 1
         }));
 
@@ -25,7 +25,7 @@ describe('available production schedule', () => {
 
     test('half scheduled , no unscheduled: half capacity available', () => {
         const db = new CentralDatabase(getPlantConfig({
-            productionLineCapacity: 10,
+            productionCapacityPerInterval: 10,
             productionLines: 1
         }));
         db.scheduledProductionOrders.push(new ProductionOrder('unit-test-1', 'unit-test-1', db.maximumProductionCapacity / 2));
@@ -37,7 +37,7 @@ describe('available production schedule', () => {
 
     test('some scheduled , some unscheduled: remaining capacity available', () => {
         const db = new CentralDatabase(getPlantConfig({
-            productionLineCapacity: 10,
+            productionCapacityPerInterval: 10,
             productionLines: 1
         }));
         db.scheduledProductionOrders.push(new ProductionOrder('unit-test-1', 'unit-test-1', 2));
@@ -50,7 +50,7 @@ describe('available production schedule', () => {
 
     test('no scheduled, half unscheduled: half capacity available', () => {
         const db = new CentralDatabase(getPlantConfig({
-            productionLineCapacity: 10,
+            productionCapacityPerInterval: 10,
             productionLines: 1
         }));
         db.unscheduledProductionOrders.push(new ProductionOrder('unit-test-1', 'unit-test-1', db.maximumProductionCapacity / 2));
