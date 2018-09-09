@@ -1,5 +1,6 @@
 
 const PurchaseOrder = require('../dtos/purchaseOrder');
+const Shipment = require('../dtos/shipment');
 const PurchaseOrderPlacedEvent = require('../events/purchaseOrderPlaced');
 const DepartmentDecision = require('../departmentDecision');
 
@@ -30,7 +31,15 @@ module.exports = class PurchasingDepartment {
 
             return (db, producer) => {
                 db.placePurchaseOrder(order);
-                return producer.publish(new PurchaseOrderPlacedEvent(order));
+                const shipment = new Shipment(
+                    null,
+                    'PurchaseOrder',
+                    order.purchaseOrderNumber,
+                    order.partNumber,
+                    order.orderQuantity
+                );
+                db.trackPurchaseOrderShipment(shipment);
+                return producer.publish(new PurchaseOrderPlacedEvent(order, shipment));
             };
         });
         return new DepartmentDecision(actions);

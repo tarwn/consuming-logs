@@ -17,6 +17,7 @@ module.exports = class CentralDatabase {
         this.finishedInventory = {};
         this.scrappedInventory = {};
         this.openSalesOrders = [];
+        this.shippedSalesOrders = [];
         this.closedSalesOrders = [];
         this.openPurchaseOrders = [];
         this.unbilledPurchaseOrders = [];
@@ -26,6 +27,8 @@ module.exports = class CentralDatabase {
         this.closedProductionOrders = [];
         this.productCatalog = [];
         this.partsCatalog = [];
+        this.trackedShipments = [];
+        this.shippingHistory = [];
 
         this._seed = `${Math.random() * 10000}-`;
         this._counter = 0;
@@ -106,8 +109,13 @@ module.exports = class CentralDatabase {
     placePurchaseOrder(purchaseOrder) {
         // assign a purchase order number
         purchaseOrder.assignNumber(`purch-${this._seed}-${this._counter++}`);
-        purchaseOrder.assignShippingTime(3);
         this.openPurchaseOrders.push(purchaseOrder);
+    }
+
+    trackPurchaseOrderShipment(shipment) {
+        shipment.assignNumber(`ship-${this._seed}-${this._counter++}`);
+        shipment.assignShippingTime(3);
+        this.trackedShipments.push(shipment);
     }
 
     /* eslint-disable */
@@ -197,5 +205,61 @@ module.exports = class CentralDatabase {
             this.scrappedInventory[partNumber] = 0;
         }
         this.scrappedInventory[partNumber] += quantity;
+    }
+
+    stageProductionOrderToShip(productionOrderNumber) {
+        const orderIndex = this.scheduledProductionOrders.findIndex((o) => {
+            return o.productionOrderNumber === productionOrderNumber;
+        });
+
+        if (orderIndex > -1) {
+            this.closedProductionOrders.push(this.scheduledProductionOrders[orderIndex]);
+            this.scheduledProductionOrders.splice(orderIndex, 1);
+        }
+        else {
+            throw new Error(`Specific production order '${productionOrderNumber}' is not in the scheduled orders`);
+        }
+    }
+
+    indicateSalesOrderHasShipped(salesOrderNumber) {
+        const orderIndex = this.openSalesOrders.findIndex((o) => {
+            return o.salesOrderNumber === salesOrderNumber;
+        });
+
+        if (orderIndex > -1) {
+            this.shippedSalesOrders.push(this.shippedSalesOrders[orderIndex]);
+            this.shippedSalesOrders.splice(orderIndex, 1);
+        }
+        else {
+            throw new Error(`Specific sales order '${salesOrderNumber}' is not in the open sales orders`);
+        }
+    }
+
+    shipShipment(shipment) {
+        shipment.assignNumber(`ship-${this._seed}-${this._counter++}`);
+        shipment.assignShippingTime(3);
+        this.trackedShipments.push(shipment);
+    }
+
+    /* eslint-disable */
+    updateTrackedShipment(shipment) {
+        // assume the shipment has been modified and references
+        //  the same one in the collection and is therefore
+        //  already updated
+    }
+    /* eslint-enable */
+
+    stopTrackingShipment(shipmentNumber) {
+        const orderIndex = this.trackedShipments.findIndex((s) => {
+            return s.shipmentNumber === shipmentNumber;
+        });
+
+        if (orderIndex > -1) {
+            this.shippingHistory.push(this.trackedShipments[orderIndex]);
+            this.trackedShipments.splice(orderIndex, 1);
+        }
+        else {
+            throw new Error(`Specific shipment '${shipmentNumber}' is not in the tracked shipments`);
+        }
     }
 };

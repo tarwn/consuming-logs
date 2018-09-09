@@ -11,7 +11,7 @@ module.exports = class SalesDepartment {
     generateOrdersIfCapacityIsAvailable() {
         let availableCapacity = this._centralDatabase.getAvailableProductionScheduleCapacity();
         const availableProducts = this._centralDatabase.productCatalog.map(p => p.partNumber);
-        
+
         const potentialOrders = [];
         while (availableCapacity >= this._config.minimumOrderSize) {
             const newOrder = SalesDepartment._generateNewOrder(

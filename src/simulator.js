@@ -81,7 +81,8 @@ module.exports = class Simulator {
             production.runPlannedProductionOrders(),
             warehouse.shipCompletedSalesOrders(),
             finance.billForShippedSalesOrders(),
-            warehouse.updatePendingPurchaseOrders()
+            warehouse.stopTrackingDeliveredSalesOrders(),
+            warehouse.updateTrackingForInTransitShipments()
         ];
 
         return decisions.map(d => d.executeAll(this._database, this._producer));
