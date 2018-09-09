@@ -10,6 +10,7 @@ module.exports = class CentralDatabase {
 
         this.productionLines = plantConfig.productionLines;
         this.productionCapacityPerInterval = plantConfig.productionCapacityPerInterval;
+        this.maximumIntervalsToSchedule = plantConfig.maximumIntervalsToSchedule;
 
         this.cash = plantConfig.cash || 0;
         this.financialLedger = [];
@@ -64,7 +65,8 @@ module.exports = class CentralDatabase {
     }
 
     get maximumProductionCapacity() {
-        return this.productionLines * this.productionCapacityPerInterval;
+        return this.productionLines * this.productionCapacityPerInterval *
+            this.maximumIntervalsToSchedule;
     }
 
     getAvailableProductionScheduleCapacity() {
@@ -167,6 +169,21 @@ module.exports = class CentralDatabase {
             data: purchaseOrder
         });
         this.cash += -1 * purchaseOrder.totalPrice;
+    }
+
+    consumeParts(partNumber, quantity) {
+        if (!this.partsInventory[partNumber]) {
+            throw new Error(`Part ${partNumber} is not in inventory`);
+        }
+
+        if (this.partsInventory[partNumber] < quantity) {
+            throw new Error(`Part ${partNumber} cannot be consumed, insufficient quantity on hand: on hand = ${this.partsInventory[partNumber]}, consumed amt = ${quantity}`);
+        }
+
+        this.partsInventory[partNumber] -= quantity;
+        return {
+            totalRemaining: this.partsInventory[partNumber]
+        };
     }
 
     produceFinishedGoods(productionOrderNumber, partNumber, quantity) {

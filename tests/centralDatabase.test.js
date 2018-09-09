@@ -7,7 +7,8 @@ function getPlantConfig(data) {
     const defaults = data || {};
     return new PlantConfig({
         productionCapacityPerInterval: defaults.productionCapacityPerInterval || 10,
-        productionLines: defaults.productionLines || 1
+        productionLines: defaults.productionLines || 1,
+        maximumIntervalsToSchedule: 20
     });
 }
 

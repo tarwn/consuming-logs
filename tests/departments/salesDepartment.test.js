@@ -11,6 +11,7 @@ function getTestConfig() {
     return new PlantConfig({
         minimumOrderSize: 5,
         productionCapacityPerInterval: 10,
+        maximumIntervalsToSchedule: 20,
         productionLines: 1,
         productCatalog: [
             {
@@ -32,7 +33,8 @@ describe('generateOrdersIfCapacityIsAvailable', () => {
         const config = getTestConfig();
         const db = new CentralDatabase(config);
         const dept = new SalesDepartment(config, db);
-        const maxCapacity = config.productionCapacityPerInterval * config.productionLines;
+        const maxCapacity = config.productionCapacityPerInterval * config.productionLines *
+            config.maximumIntervalsToSchedule;
         db.scheduledProductionOrders.push(new ProductionOrder('so-123', SINGLE_PART_PRODUCT, maxCapacity));
 
         const decision = dept.generateOrdersIfCapacityIsAvailable();
@@ -45,8 +47,8 @@ describe('generateOrdersIfCapacityIsAvailable', () => {
         const db = new CentralDatabase(config);
         const dept = new SalesDepartment(config, db);
         const producer = new FakeProducer();
-        const usedCapacity = (config.productionCapacityPerInterval * config.productionLines) -
-            config.minimumOrderSize;
+        const usedCapacity = (config.productionCapacityPerInterval * config.productionLines *
+            config.maximumIntervalsToSchedule) - config.minimumOrderSize;
         db.scheduledProductionOrders.push(new ProductionOrder('so-123', SINGLE_PART_PRODUCT, usedCapacity));
 
         const decision = dept.generateOrdersIfCapacityIsAvailable();

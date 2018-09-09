@@ -27,3 +27,5 @@ Improved Simulation
 [] Sales Orders: Shipping charges
 [] Purchase Orders: Shipping charges
 [] Shipping: Variability in shipping times
+
+[] Production: Implement production lines + dedicated orders to better handle stalls, scrap patterns, etc

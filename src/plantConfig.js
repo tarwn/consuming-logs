@@ -7,6 +7,7 @@ module.exports = class PlantConfig {
         // configs w/out defaults
         this.productionCapacityPerInterval = config.productionCapacityPerInterval;
         this.productionScrapPercentage = config.productionScrapPercentage || 0;
+        this.maximumIntervalsToSchedule = config.maximumIntervalsToSchedule;
 
         // product catalog
         this.productCatalog = config.productCatalog || [
@@ -22,13 +23,13 @@ module.exports = class PlantConfig {
     }
 
     get isValid() {
-        const requiredFields = ['productionCapacityPerInterval', 'productCatalog', 'partsCatalog'];
+        const requiredFields = ['productionCapacityPerInterval', 'productCatalog', 'partsCatalog', 'maximumIntervalsToSchedule'];
 
         return !requiredFields.some(f => !PlantConfig._isFieldValid(this[f]));
     }
 
     get validationErrors() {
-        const requiredFields = ['productionCapacityPerInterval', 'productCatalog', 'partsCatalog'];
+        const requiredFields = ['productionCapacityPerInterval', 'productCatalog', 'partsCatalog', 'maximumIntervalsToSchedule'];
         return requiredFields.filter(f => !PlantConfig._isFieldValid(this[f]))
             .map(f => PlantConfig._fieldValidationError(f, this[f]));
     }

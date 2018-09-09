@@ -43,9 +43,10 @@ module.exports = class Simulator {
             .then(() => {
                 const actions = this._executeBusinessDecisions();
 
-                if (this._intervalCount % 10 === 0) {
-                    actions.push(this._producer.publish(new HeartbeatEvent(Date.now())));
-                }
+                actions.push(this._producer.publish(new HeartbeatEvent(
+                    this._intervalCount,
+                    Date.now()
+                )));
 
                 return Promise.all(actions);
             })
