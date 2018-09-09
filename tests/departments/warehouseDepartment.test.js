@@ -141,8 +141,10 @@ describe('shipCompletedSalesOrders', () => {
 
         expect(decision.getActionCount()).toBe(1);
         expect(producer.messages).toContainInstanceOf(SalesOrderShippedEvent);
-        expect(db.scheduledProductionOrders.length).toBe(0);
-        expect(db.trackedShipments.length).toBe(1);
+        expect(db.scheduledProductionOrders).toHaveLength(0);
+        expect(db.openSalesOrders).toHaveLength(0);
+        expect(db.shippedSalesOrders).toHaveLength(1);
+        expect(db.trackedShipments).toHaveLength(1);
     });
 
     test('multiple completed production orders results in multiple new shipments', async () => {
@@ -163,8 +165,10 @@ describe('shipCompletedSalesOrders', () => {
 
         expect(decision.getActionCount()).toBe(3);
         expect(producer.messages).toContainInstancesOf(SalesOrderShippedEvent, 3);
-        expect(db.scheduledProductionOrders.length).toBe(0);
-        expect(db.trackedShipments.length).toBe(3);
+        expect(db.scheduledProductionOrders).toHaveLength(0);
+        expect(db.openSalesOrders).toHaveLength(0);
+        expect(db.shippedSalesOrders).toHaveLength(3);
+        expect(db.trackedShipments).toHaveLength(3);
     });
 });
 

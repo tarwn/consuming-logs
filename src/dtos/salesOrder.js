@@ -24,4 +24,8 @@ module.exports = class SalesOrder {
         productionOrder.assignNumber(`${this.salesOrderNumber}-production`);
         return productionOrder;
     }
+
+    getTotalAmountDue() {
+        return this.orderQuantity * this.itemPrice;
+    }
 };

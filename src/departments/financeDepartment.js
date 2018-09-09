@@ -1,6 +1,8 @@
 
 const PurchaseOrderPaidEvent = require('../events/purchaseOrderPaid');
 const DepartmentDecision = require('../departmentDecision');
+const SalesOrderInvoicedEvent = require('../events/salesOrderInvoiced');
+const SalesOrderInvoicePaidEvent = require('../events/salesOrderInvoicePaid');
 
 module.exports = class FinanceDepartment {
     constructor(plantConfig, centralDatabase) {
@@ -19,6 +21,16 @@ module.exports = class FinanceDepartment {
     }
 
     billForShippedSalesOrders() {
-        return DepartmentDecision.noAction();
+        const actions = this._centralDatabase.shippedSalesOrders.map((so) => {
+            return (db, producer) => {
+                db.invoiceForSalesOrder(so.salesOrderNumber);
+                db.receivePaymentForSalesOrder(so, so.getTotalAmountDue());
+                return producer.publish([
+                    new SalesOrderInvoicedEvent(so, so.getTotalAmountDue()),
+                    new SalesOrderInvoicePaidEvent(so, so.getTotalAmountDue())
+                ]);
+            };
+        });
+        return new DepartmentDecision(actions);
     }
 };

@@ -163,7 +163,7 @@ module.exports = class CentralDatabase {
 
         this.financialLedger.push({
             amount: -1 * purchaseOrder.totalPrice,
-            type: 'purchaseOrder',
+            type: 'PurchaseOrder',
             data: purchaseOrder
         });
         this.cash += -1 * purchaseOrder.totalPrice;
@@ -227,8 +227,8 @@ module.exports = class CentralDatabase {
         });
 
         if (orderIndex > -1) {
-            this.shippedSalesOrders.push(this.shippedSalesOrders[orderIndex]);
-            this.shippedSalesOrders.splice(orderIndex, 1);
+            this.shippedSalesOrders.push(this.openSalesOrders[orderIndex]);
+            this.openSalesOrders.splice(orderIndex, 1);
         }
         else {
             throw new Error(`Specific sales order '${salesOrderNumber}' is not in the open sales orders`);
@@ -261,5 +261,28 @@ module.exports = class CentralDatabase {
         else {
             throw new Error(`Specific shipment '${shipmentNumber}' is not in the tracked shipments`);
         }
+    }
+
+    invoiceForSalesOrder(salesOrderNumber) {
+        const orderIndex = this.shippedSalesOrders.findIndex((o) => {
+            return o.salesOrderNumber === salesOrderNumber;
+        });
+
+        if (orderIndex > -1) {
+            this.closedSalesOrders.push(this.shippedSalesOrders[orderIndex]);
+            this.shippedSalesOrders.splice(orderIndex, 1);
+        }
+        else {
+            throw new Error(`Specific sales order '${salesOrderNumber}' is not in the open sales orders`);
+        }
+    }
+
+    receivePaymentForSalesOrder(salesOrder, amount) {
+        this.financialLedger.push({
+            amount,
+            type: 'SalesOrder',
+            data: salesOrder
+        });
+        this.cash += amount;
     }
 };
