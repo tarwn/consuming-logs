@@ -40,7 +40,7 @@ services:
       ADVERTISED_HOST: kafkaserver
       ADVERTISED_PORT: 9092
   kafka_manager:
-    image: "sheepkiller/kafka-manager"
+    image: "hlebalbau/kafka-manager"
     container_name: kafkamanager
     networks:
       - kafkanet

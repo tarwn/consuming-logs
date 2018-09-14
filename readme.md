@@ -60,7 +60,7 @@ Tests (if you customize it)
     * Install [wallaby](https://wallabyjs.com/)
     * Watch wallaby run like magic...
 
-Useful References
+Tech So Far
 ======================
 
 * [kafka-node on github](https://github.com/SOHU-Co/kafka-node)
