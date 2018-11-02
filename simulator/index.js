@@ -1,8 +1,7 @@
-const config = require('./config');
+const config = require('../config');
 const Simulator = require('./src/simulator');
 const Producer = require('./src/kafka/producer');
-const Web = require('./src/web');
-const { ConsumerGroup } = require('kafka-node');
+// const { ConsumerGroup } = require('kafka-node');
 
 console.log(`
 ============ Plant Simulation ================
@@ -25,12 +24,6 @@ producer.initialize()
 const simulator = new Simulator(config, producer);
 const timer = setInterval(() => simulator.runInterval(), 1000);
 
-const web = new Web(config);
-web.start()
-    .then(() => {
-        console.log(`Web console started on http://localhost:${config.webPort}`);
-    });
-
 process.once('SIGINT', () => {
     clearInterval(timer);
     producer.publish({ type: 'system', action: 'exiting', time: Date.now() })
@@ -43,16 +36,16 @@ process.once('SIGINT', () => {
 });
 
 // log events to console
-const options = {
-    kafkaHost: config.kafka_host,
-    fromOffset: 'earliest',
-    groupId: 'publisher-log-group'
-};
-const consumer = new ConsumerGroup(options, [config.kafka_topic]);
-consumer.on('message', (message) => {
-    // console.log(`LOG: ${JSON.stringify(message)}`);
-    web.publishEvents(message);
-});
-consumer.on('error', (error) => {
-    console.log(`Error: ${JSON.stringify(error)}`);
-});
+// const options = {
+//     kafkaHost: config.kafka_host,
+//     fromOffset: 'earliest',
+//     groupId: 'publisher-log-group'
+// };
+// const consumer = new ConsumerGroup(options, [config.kafka_topic]);
+// consumer.on('message', (message) => {
+//     // console.log(`LOG: ${JSON.stringify(message)}`);
+//     web.publishEvents(message);
+// });
+// consumer.on('error', (error) => {
+//     console.log(`Error: ${JSON.stringify(error)}`);
+// });

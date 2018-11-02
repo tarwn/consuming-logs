@@ -1,12 +1,12 @@
 module.exports = () => {
     return {
         files: [
-            'src/**/*.js',
-            'tests/fakeProducer.js',
-            'tests/customMatchers.js'
+            'simulator/src/**/*.js',
+            'simulator/tests/fakeProducer.js',
+            'simulator/tests/customMatchers.js'
         ],
         tests: [
-            'tests/**/*.test.js'
+            'simulator/tests/**/*.test.js'
         ],
         env: {
             type: 'node',

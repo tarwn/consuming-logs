@@ -1,11 +1,13 @@
 {
-  "name": "node-kafka-thing",
+  "name": "widgit-factory-main",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "The collection of widgit factory apps for the simulator",
+  "private": true,
   "scripts": {
-    "simulation": "node index.js",
-    "test": ".\\node_modules\\.bin\\jest"
+    "all": "concurrently --names \"SIM,WEB\" -c \"bgGreen.bold,bgBlue.bold\" --kill-others-on-fail \"node simulator/index.js\" \"node web/index.js\"",
+    "build": "cd web && npm run build",
+    "test": "cd simulator && npm run test",
+    "postinstall": "cd simulator && npm install && cd .. && cd web && npm install"
   },
   "author": "",
   "license": "ISC",
@@ -15,16 +17,14 @@
   "dependencies": {
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
-    "express": "^4.16.3",
-    "kafka-node": "^2.6.1",
-    "socket.io": "^2.1.1"
+    "kafka-node": "^2.6.1"
   },
   "devDependencies": {
-    "eslint-plugin-import": "^2.14.0",
+    "concurrently": "^4.0.1",
     "jest": "23.4.1",
     "jest-cli": "23.4.1"
   },
   "jest": {
-    "setupTestFrameworkScriptFile": "./tests/customMatchers.js"
+    "setupTestFrameworkScriptFile": "./simulator/tests/customMatchers.js"
   }
 }

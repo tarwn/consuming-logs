@@ -21,6 +21,7 @@ usage instructions.
 
 Some sample exercises:
 
+* Build a realtime warehouse shipping view
 * Build a realtime revenue report
 * Email alerts when a production order is complete
 * Build an anonymized planning view customers could see
@@ -32,7 +33,7 @@ Instructions
 
 1. Download or `git clone` this repository
 2. Follow the Setup below
-3. Run the simulation with exercise 1: `npm run simulation 1`
+3. Run the simulation with exercise 1: `npm run all 1`
 4. Open up [Exercise 1](./Exercises/Exercise1.md), make your own project in the language of your choice, and get started!
 
 Setup
@@ -50,7 +51,7 @@ Running Simulation
 Currently only supports a basic config, numbered scenarios
 in the future.
 
-`npm run simulation`
+`npm run all`
 
 Tests (if you customize it)
 ----------------------------
@@ -59,6 +60,8 @@ Tests (if you customize it)
 * Run tests like magic:
     * Install [wallaby](https://wallabyjs.com/)
     * Watch wallaby run like magic...
+
+_Note: Jest configs need to be present in /web/package.json and /package.json to llow local and wallaby tests to run_
 
 Tech So Far
 ======================
