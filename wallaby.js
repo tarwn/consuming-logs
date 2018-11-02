@@ -18,6 +18,7 @@ module.exports = () => {
         debug: true,
 
         setup: (wallaby) => {
+            /* eslint-disable-next-line */
             const jestConfig = require('./package.json').jest;
             wallaby.testFramework.configure(jestConfig);
         }

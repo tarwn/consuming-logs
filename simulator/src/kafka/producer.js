@@ -9,6 +9,10 @@ module.exports = class Producer {
         // waiting on node-kafka > 2.6.1: update manually via kafka manager
         // this._topic = { topic: config.kafka_topic, partitions: 2, replicationFactor: 2 }
         this._topic = config.kafka_topic;
+        this.lastId = {
+            date: Date.now(),
+            id: 0
+        };
     }
 
     initialize() {
@@ -68,6 +72,9 @@ module.exports = class Producer {
 
     _sendMessage(events) {
         return new Promise((resolve, reject) => {
+            events.forEach((e) => {
+                e.$id = this._generateId(e);
+            });
             const messages = events.map(e => JSON.stringify(e));
             const payloads = [
                 { topic: this._topicName, messages }
@@ -83,5 +90,23 @@ module.exports = class Producer {
                 }
             });
         });
+    }
+
+    _generateId() {
+        // don't do it this way in the real world
+        if (this.lastId.date === Date.now()) {
+            this.lastId.id++;
+        }
+        else {
+            this.lastId = {
+                date: Date.now(),
+                id: 1
+            };
+        }
+        return this.getLastIdString();
+    }
+
+    getLastIdString() {
+        return `${this.lastId.date}.${this.lastId.id}`;
     }
 };

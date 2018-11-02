@@ -10,6 +10,7 @@ Exercises
 Dashboard
 ------------------------
 
+[] socket consumer + kafka consumer start at current time, need past events or a starting state from simulator
 [] Local dashboard to show state for exercise comparison (React, Socket.io, d3?)
 
 Database

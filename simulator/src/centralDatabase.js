@@ -31,7 +31,9 @@ module.exports = class CentralDatabase {
         this.trackedShipments = [];
         this.shippingHistory = [];
 
-        this._seed = `${Math.random() * 10000}-`;
+        this.version = '';
+
+        this._seed = `${Math.floor(Math.random() * 10000)}-`;
         this._counter = 0;
 
         plantConfig.productCatalog.forEach((product) => {
@@ -301,5 +303,9 @@ module.exports = class CentralDatabase {
             data: salesOrder
         });
         this.cash += amount;
+    }
+
+    setVersion(version) {
+        this.version = version;
     }
 };

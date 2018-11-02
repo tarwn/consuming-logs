@@ -1,6 +1,6 @@
 module.exports = {
     kafka_host: 'kafkaserver:9092',
-    kafka_topic: 'store-topic',
+    kafka_topic: 'store-topic-2',
 
     webPort: 8082,
 

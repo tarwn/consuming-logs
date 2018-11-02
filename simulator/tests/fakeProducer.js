@@ -12,4 +12,8 @@ module.exports = class FakeProducer {
             this.messages.push(message);
         }
     }
+
+    getLastIdString() {
+        return `test.${this.messages.length}`;
+    }
 };

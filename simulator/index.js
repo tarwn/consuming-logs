@@ -1,6 +1,7 @@
 const config = require('../config');
 const Simulator = require('./src/simulator');
 const Producer = require('./src/kafka/producer');
+const SystemEvent = require('./src/events/system');
 // const { ConsumerGroup } = require('kafka-node');
 
 console.log(`
@@ -13,7 +14,7 @@ Press Ctrl+C to exit.
 const producer = new Producer(config);
 producer.initialize()
     .then(() => {
-        return producer.publish({ type: 'system', action: 'starting', time: Date.now() });
+        return producer.publish(new SystemEvent('starting', Date.now()));
     })
     .catch((err) => {
         console.log('Error initializing: ');
@@ -26,7 +27,7 @@ const timer = setInterval(() => simulator.runInterval(), 1000);
 
 process.once('SIGINT', () => {
     clearInterval(timer);
-    producer.publish({ type: 'system', action: 'exiting', time: Date.now() })
+    producer.publish(new SystemEvent('exiting', Date.now()))
         .then(() => {
             process.exit(0);
         })
