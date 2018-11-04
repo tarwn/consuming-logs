@@ -20,6 +20,8 @@
         "arrow-body-style": "off",                  "// freedom to use blocks when more readable instead of using ({ return ... })": "",
         "no-else-return": "off",                    "// I find consistent indentation more readable": "",
         "no-plusplus": "off",                       "// Only needed as ASI protection for folks allergic to semi-colons": "",
-        "no-mixed-operators": ["error", {"allowSamePrecedence": true}],     "// a + b - c is easy enough to understand": ""
+        "no-mixed-operators": ["error", {"allowSamePrecedence": true}],     "// a + b - c is easy enough to understand": "",
+
+        "no-console": "off",                        "// turned off specifically for this project": ""
     }
 }

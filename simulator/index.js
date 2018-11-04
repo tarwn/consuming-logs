@@ -35,18 +35,3 @@ process.once('SIGINT', () => {
             process.exit(-1);
         });
 });
-
-// log events to console
-// const options = {
-//     kafkaHost: config.kafka_host,
-//     fromOffset: 'earliest',
-//     groupId: 'publisher-log-group'
-// };
-// const consumer = new ConsumerGroup(options, [config.kafka_topic]);
-// consumer.on('message', (message) => {
-//     // console.log(`LOG: ${JSON.stringify(message)}`);
-//     web.publishEvents(message);
-// });
-// consumer.on('error', (error) => {
-//     console.log(`Error: ${JSON.stringify(error)}`);
-// });
