@@ -9,6 +9,7 @@
         "describe": true,
         "test": true,
         "expect": true,
+        "afterEach": true,
         "io": true
     },
     "rules": {

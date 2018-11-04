@@ -53,6 +53,10 @@ module.exports = class CentralDatabase {
         });
     }
 
+    initialize() {
+        this._noop = 'noop';
+    }
+
     toStatusString() {
         return {
             openSalesOrders: this.openSalesOrders.length,

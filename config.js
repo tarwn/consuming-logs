@@ -3,6 +3,7 @@ module.exports = {
     kafka_topic: 'store-topic-2',
 
     webPort: 8082,
+    simulatorPort: 8083,
 
     minimumOrderSize: 5,
     productionLines: 1,

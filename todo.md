@@ -1,23 +1,3 @@
-
-Exercises
-------------------------
-
-[] Revenue report
-[] Email alerts when production orders are complete
-[] Generate invoice when sales orders ship
-[] Realtime, segmented data over a large dataset?
-
-Dashboard
-------------------------
-
-[] socket consumer + kafka consumer start at current time, need past events or a starting state from simulator
-[] Local dashboard to show state for exercise comparison (React, Socket.io, d3?)
-
-Database
-------------------------
-
-[] Convert to relational model w/ status fields? PostGres in docker, [AlaSQL](http://alasql.org/), ?
-
 Improved Simulation
 ------------------------
 

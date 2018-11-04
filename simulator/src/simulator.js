@@ -26,6 +26,12 @@ module.exports = class Simulator {
         this._intervalCount = 0;
     }
 
+    async initialize() {
+        this._isInitialized = false;
+        await this._database.initialize();
+        this._isInitialized = true;
+    }
+
     runInterval() {
         return Promise.resolve()
             .then(() => this._runInterval());
