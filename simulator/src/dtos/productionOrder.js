@@ -25,4 +25,15 @@ module.exports = class ProductionOrder {
     get isComplete() {
         return this.orderQuantity === this.completedQuantity;
     }
+
+    static fromDB(rawObject) {
+        const value = new ProductionOrder(
+            rawObject.salesOrderNumber,
+            rawObject.partNumber,
+            rawObject.orderQuantity
+        );
+        value.productionOrderNumber = rawObject.productionOrderNumber;
+        value.completedQuantity = rawObject.completedQuantity;
+        return value;
+    }
 };

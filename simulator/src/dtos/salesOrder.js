@@ -28,4 +28,14 @@ module.exports = class SalesOrder {
     getTotalAmountDue() {
         return this.orderQuantity * this.itemPrice;
     }
+
+    static fromDB(rawObject) {
+        const value = new SalesOrder(
+            rawObject.salesOrderNumber,
+            rawObject.partNumber,
+            rawObject.orderQuantity,
+            rawObject.itemPrice
+        );
+        return value;
+    }
 };

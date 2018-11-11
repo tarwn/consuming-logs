@@ -22,11 +22,13 @@ const setup = {
         const order = new ProductionOrder(salesOrderNumber, partNumber, orderQuantity);
         order.assignNumber(`po-${salesOrderNumber}`);
         await db._addScheduledProductionOrder(order);
+        return order;
     },
     addUnscheduledProductionOrder: async (db, salesOrderNumber, partNumber, orderQuantity) => {
         const order = new ProductionOrder(salesOrderNumber, partNumber, orderQuantity);
         order.assignNumber(`po-${salesOrderNumber}`);
         await db._addUnscheduledProductionOrder(order);
+        return order;
     }
 };
 
@@ -96,85 +98,75 @@ describe('available production schedule', () => {
     });
 });
 
-// describe('placeSalesOrder', () => {
-//     test('new salesOrder is assigned a Sales Order Number', () => {
-//         const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
-//         const salesOrder = new SalesOrder(null, 'any', 1, 1);
+describe('placeSalesOrder', () => {
+    test('new salesOrder is assigned a Sales Order Number', async () => {
+        const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
+        const salesOrder = new SalesOrder(null, 'any', 1, 1);
 
-//         db.placeSalesOrder(salesOrder);
+        db.placeSalesOrder(salesOrder);
 
-//         expect(salesOrder.salesOrderNumber).not.toBeNull();
-//     });
+        expect(salesOrder.salesOrderNumber).not.toBeNull();
+    });
 
-//     test('new salesOrder is added to unscheduled orders', () => {
-//         const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
-//         const salesOrder = new SalesOrder(null, 'any', 1, 1);
+    test('new salesOrder is added to unscheduled production orders', async () => {
+        const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
+        const salesOrder = new SalesOrder(null, 'any', 1, 1);
 
-//         db.placeSalesOrder(salesOrder);
+        db.placeSalesOrder(salesOrder);
 
-//         const order = db.unscheduledProductionOrders.find((o) => {
-//             return o.salesOrderNumber === salesOrder.salesOrderNumber;
-//         });
-//         expect(order).not.toBeNull();
-//     });
+        const orders = await db._getUnscheduledProductionOrders();
+        const order = orders.find(async (o) => {
+            return o.salesOrderNumber === salesOrder.salesOrderNumber;
+        });
+        expect(order).not.toBeNull();
+    });
 
-//     test('new salesOrder is added to open sales orders', () => {
-//         const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
-//         const salesOrder = new SalesOrder(null, 'any', 1, 1);
+    test('new salesOrder is added to open sales orders', async () => {
+        const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
+        const salesOrder = new SalesOrder(null, 'any', 1, 1);
 
-//         db.placeSalesOrder(salesOrder);
+        db.placeSalesOrder(salesOrder);
 
-//         const order = db.openSalesOrders.find((o) => {
-//             return o.salesOrderNumber === salesOrder.salesOrderNumber;
-//         });
-//         expect(order).not.toBeNull();
-//     });
-// });
+        const orders = await db._getOpenSalesOrders();
+        const order = orders.find(async (o) => {
+            return o.salesOrderNumber === salesOrder.salesOrderNumber;
+        });
+        expect(order).not.toBeNull();
+    });
+});
 
-// describe('planProductionOrder', () => {
-//     test('valid order is moved from unscheduled orders to scheduled orders', () => {
-//         const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
-//         const prodOrder = new ProductionOrder('unit-test-2', 'any', 1);
-//         db._addUnscheduledProductionOrder(prodOrder);
+describe('planProductionOrder', () => {
+    test('valid order is moved from unscheduled orders to scheduled orders', async () => {
+        const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
+        const prodOrder = await setup.addUnscheduledProductionOrder(db, 'unit-test-1', 'unit-test-1', 1);
 
-//         db.planProductionOrder(prodOrder);
+        db.planProductionOrder(prodOrder);
 
-//         const order = db.unscheduledProductionOrders.find((o) => {
-//             return o.productionOrderNumber === prodOrder.productionOrderNumber;
-//         });
-//         const order2 = db.scheduledProductionOrders.find((o) => {
-//             return o.productionOrderNumber === prodOrder.productionOrderNumber;
-//         });
-//         expect(order).toBeUndefined();
-//         expect(order2).not.toBeUndefined();
-//     });
+        // no longer in unscheduled orders
+        const unscheduledOrders = await db._getUnscheduledProductionOrders();
+        expect(unscheduledOrders).toEqual([]);
+        // now in scheduled orders
+        const scheduledOrders = await db._getScheduledProductionOrders();
+        const order = scheduledOrders.find(async (o) => {
+            return o.productOrderNumber === prodOrder.productOrderNumber;
+        });
+        expect(order).not.toBeUndefined();
+    });
 
-//     test('valid order is removed and leaves remaining unscheduled orders', () => {
-//         const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
-//         const prodOrders = [
-//             new ProductionOrder('unit-test-2', 'any', 1),
-//             new ProductionOrder('unit-test-3', 'any', 1),
-//             new ProductionOrder('unit-test-4', 'any', 1)
-//         ];
-//         prodOrders.forEach((po) => {
-//             po.assignNumber(po.salesOrderNumber);
-//             db._addUnscheduledProductionOrder(po);
-//         });
+    test('valid order is removed and leaves remaining unscheduled orders', async () => {
+        const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
+        const prodOrders = await Promise.all([
+            setup.addUnscheduledProductionOrder(db, 'unit-test-2', 'unit-test-2', 1),
+            setup.addUnscheduledProductionOrder(db, 'unit-test-3', 'unit-test-3', 1),
+            setup.addUnscheduledProductionOrder(db, 'unit-test-4', 'unit-test-4', 1)
+        ]);
 
-//         db.planProductionOrder(prodOrders[1]); // unit-test-3
+        db.planProductionOrder(prodOrders[1]); // unit-test-3
 
-//         expect(db.unscheduledProductionOrders.length).toBe(2);
-//         expect(db.unscheduledProductionOrders[0].salesOrderNumber).toBe('unit-test-2');
-//         expect(db.unscheduledProductionOrders[1].salesOrderNumber).toBe('unit-test-4');
-//     });
+        const unscheduledProductionOrders = await db._getUnscheduledProductionOrders();
+        expect(unscheduledProductionOrders.length).toBe(2);
+        expect(unscheduledProductionOrders[0].salesOrderNumber).toBe('unit-test-2');
+        expect(unscheduledProductionOrders[1].salesOrderNumber).toBe('unit-test-4');
+    });
 
-//     test('invalid order is reported as error', () => {
-//         const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
-//         const prodOrder = new ProductionOrder('unit-test-2', 'any', 1);
-//         // setup.addUnscheduledProductionOrder(prodOrder);
-
-//         expect(() => {
-//             db.planProductionOrder(prodOrder);
-//         }).toThrow();
-//     });
-// });
+});

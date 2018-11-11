@@ -3,6 +3,8 @@ const leveldown = require('leveldown');
 const encode = require('encoding-down');
 const FinishedGood = require('./dtos/finishedGood');
 const FinishedGoodBOM = require('./dtos/finishedGoodBOM');
+const ProductionOrder = require('./dtos/productionOrder');
+const SalesOrder = require('./dtos/salesOrder');
 const RawPart = require('./dtos/rawPart');
 
 
@@ -26,7 +28,6 @@ module.exports = class PersistentDatabase {
     async initialize() {
         // is this a continue or new execution?
         //  if continue, does the config match or should it be a new start?
-
         let operations = [
             {
                 type: 'put',
@@ -69,7 +70,7 @@ module.exports = class PersistentDatabase {
         };
     }
 
-    // todo: abstract business logic from raw persistence?
+    // business logic
 
     get maximumProductionCapacity() {
         return this._plantConfig.productionLines *
@@ -85,52 +86,96 @@ module.exports = class PersistentDatabase {
         const scheduledProductionOrders = await this._getScheduledProductionOrders();
         const unscheduledProductionOrders = await this._getUnscheduledProductionOrders();
 
-        // console.log({
-        //     capacity: this.maximumProductionCapacity,
-        //     scheduled: scheduledProductionOrders.reduce(calculateUsedCapacity, 0),
-        //     unscheduled: unscheduledProductionOrders.reduce(calculateUsedCapacity, 0)
-        // });
-
         return this.maximumProductionCapacity -
             scheduledProductionOrders.reduce(calculateUsedCapacity, 0) -
             unscheduledProductionOrders.reduce(calculateUsedCapacity, 0);
     }
 
-    // database access
+    async placeSalesOrder(salesOrder) {
+        salesOrder.assignNumber(`so-${this._seed}-${this._counter++}`);
+        this._addOpenSalesOrder(salesOrder);
+        const productionOrder = salesOrder.generateProductionOrder();
+        this._addUnscheduledProductionOrder(productionOrder);
+    }
 
+    async planProductionOrder(prodOrder) {
+        this._transferProductionOrder(prodOrder, 'Unscheduled', 'Scheduled');
+    }
+
+    // database access
+    static _guardAgainstNull(order, field) {
+        if (order[field] == null) {
+            throw new Error(`Guard: ${field} cannot be null`);
+        }
+    }
+
+    // - Sales Orders
+    async _addOpenSalesOrder(order) {
+        PersistentDatabase._guardAgainstNull(order, 'salesOrderNumber');
+        await this._put(
+            `SalesOrder:${order.salesOrderNumber}`,
+            order,
+            ['Index:SalesOrders:Open']
+        );
+    }
+
+    async _getOpenSalesOrders() {
+        return this._getAllByIndex(SalesOrder, 'Index:SalesOrders:Open');
+    }
+
+    // - Production Orders
     async _addScheduledProductionOrder(order) {
-        await this._db.batch([
-            { type: 'put', key: `ProductionOrder:${order.productionOrderNumber}`, value: order },
-            { type: 'put', key: `Index:ProductionOrders:Scheduled:${order.productionOrderNumber}`, value: `ProductionOrder:${order.productionOrderNumber}` }
-        ]);
+        PersistentDatabase._guardAgainstNull(order, 'productionOrderNumber');
+        await this._put(
+            `ProductionOrder:${order.productionOrderNumber}`,
+            order,
+            ['Index:ProductionOrders:Scheduled']
+        );
     }
 
     async _getScheduledProductionOrders() {
-        return this._getIndexedValues('Index:ProductionOrders:Scheduled:');
+        return this._getAllByIndex(ProductionOrder, 'Index:ProductionOrders:Scheduled');
     }
 
     async _addUnscheduledProductionOrder(order) {
-        await this._db.batch([
-            { type: 'put', key: `ProductionOrder:${order.productionOrderNumber}`, value: order },
-            { type: 'put', key: `Index:ProductionOrders:Unscheduled:${order.productionOrderNumber}`, value: `ProductionOrder:${order.productionOrderNumber}` }
-        ]);
+        PersistentDatabase._guardAgainstNull(order, 'productionOrderNumber');
+        await this._put(
+            `ProductionOrder:${order.productionOrderNumber}`,
+            order,
+            ['Index:ProductionOrders:Unscheduled']
+        );
     }
 
     async _getUnscheduledProductionOrders() {
-        return this._getIndexedValues('Index:ProductionOrders:Unscheduled:');
+        return this._getAllByIndex(ProductionOrder, 'Index:ProductionOrders:Unscheduled');
     }
 
-    // helpers
-    async _getIndexedValues(indexPrefix) {
-        // search from indexPrefix to < one character past indexPrefix
-        const indexPrefixEnd = indexPrefix.slice(0, -1) +
-            String.fromCharCode(indexPrefix.slice(-1).charCodeAt(0) + 1);
+    async _transferProductionOrder(order, currentState, newState) {
+        PersistentDatabase._guardAgainstNull(order, 'productionOrderNumber');
+        // remove old index and add new one in one shot
+        const key = `ProductionOrder:${order.productionOrderNumber}`;
+        await this._db.batch([
+            { type: 'del', key: `Index:ProductionOrders:${currentState}:${key}` },
+            { type: 'put', key: `Index:ProductionOrders:${newState}:${key}`, value: key }
+        ]);
+    }
+
+    // db helpers
+    async _get(objectType, key) {
+        const raw = await this._db.get(key);
+        return objectType.fromDB(raw);
+    }
+
+    async _getAllByIndex(objectType, indexName) {
+        // search from index name prefix to < one character past
+        const indexStart = `${indexName}:`;
+        const indexEnd = `${indexName};`;
 
         const index = await new Promise((resolve, reject) => {
             const indexValues = [];
             this._db.createReadStream({
-                gte: indexPrefix,
-                lt: indexPrefixEnd,
+                gte: indexStart,
+                lt: indexEnd,
                 keys: true,
                 values: true
             })
@@ -145,7 +190,18 @@ module.exports = class PersistentDatabase {
                     resolve(indexValues);
                 });
         });
-        return Promise.all(index.map(key => this._db.get(key)));
+        return Promise.all(index.map(key => this._get(objectType, key)));
+    }
+
+    async _put(key, value, indices) {
+        const ops = [
+            { type: 'put', key, value }
+        ];
+        (indices || []).forEach((i) => {
+            ops.push({ type: 'put', key: `${i}:${key}`, value: key });
+        });
+
+        await this._db.batch(ops);
     }
 
     static async _indexOrEmpty(func) {
