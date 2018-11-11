@@ -103,7 +103,7 @@ describe('placeSalesOrder', () => {
         const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
         const salesOrder = new SalesOrder(null, 'any', 1, 1);
 
-        db.placeSalesOrder(salesOrder);
+        await db.placeSalesOrder(salesOrder);
 
         expect(salesOrder.salesOrderNumber).not.toBeNull();
     });
@@ -112,7 +112,7 @@ describe('placeSalesOrder', () => {
         const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
         const salesOrder = new SalesOrder(null, 'any', 1, 1);
 
-        db.placeSalesOrder(salesOrder);
+        await db.placeSalesOrder(salesOrder);
 
         const orders = await db._getUnscheduledProductionOrders();
         const order = orders.find(async (o) => {
@@ -125,7 +125,7 @@ describe('placeSalesOrder', () => {
         const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
         const salesOrder = new SalesOrder(null, 'any', 1, 1);
 
-        db.placeSalesOrder(salesOrder);
+        await db.placeSalesOrder(salesOrder);
 
         const orders = await db._getOpenSalesOrders();
         const order = orders.find(async (o) => {
@@ -140,7 +140,7 @@ describe('planProductionOrder', () => {
         const db = new PersistentDatabase(getPlantConfig(), getSimulatorConfig());
         const prodOrder = await setup.addUnscheduledProductionOrder(db, 'unit-test-1', 'unit-test-1', 1);
 
-        db.planProductionOrder(prodOrder);
+        await db.planProductionOrder(prodOrder);
 
         // no longer in unscheduled orders
         const unscheduledOrders = await db._getUnscheduledProductionOrders();
@@ -161,7 +161,7 @@ describe('planProductionOrder', () => {
             setup.addUnscheduledProductionOrder(db, 'unit-test-4', 'unit-test-4', 1)
         ]);
 
-        db.planProductionOrder(prodOrders[1]); // unit-test-3
+        await db.planProductionOrder(prodOrders[1]); // unit-test-3
 
         const unscheduledProductionOrders = await db._getUnscheduledProductionOrders();
         expect(unscheduledProductionOrders.length).toBe(2);

@@ -27,12 +27,12 @@ function getTestConfig() {
 }
 
 describe('orderPartsForPlannedOrders', () => {
-    test('no scheduled orders results in no decisions', () => {
+    test('no scheduled orders results in no decisions', async () => {
         const config = getTestConfig();
         const db = new CentralDatabase(config);
         const dept = new PurchasingDepartment(config, db);
 
-        const decision = dept.orderPartsForPlannedOrders();
+        const decision = await dept.orderPartsForPlannedOrders();
 
         expect(decision.getActionCount()).toBe(0);
     });
@@ -45,7 +45,7 @@ describe('orderPartsForPlannedOrders', () => {
         db.scheduledProductionOrders.push(new ProductionOrder('so-123', SINGLE_PART_PRODUCT, 123));
         db.partsInventory['raw-1'] = 0;
 
-        const decision = dept.orderPartsForPlannedOrders();
+        const decision = await dept.orderPartsForPlannedOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(1);
@@ -63,7 +63,7 @@ describe('orderPartsForPlannedOrders', () => {
         db.scheduledProductionOrders.push(new ProductionOrder('so-123', SINGLE_PART_PRODUCT, 123));
         db.partsInventory['raw-1'] = 123;
 
-        const decision = dept.orderPartsForPlannedOrders();
+        const decision = await dept.orderPartsForPlannedOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(0);
@@ -79,7 +79,7 @@ describe('orderPartsForPlannedOrders', () => {
         db.scheduledProductionOrders[0].increaseCompletedQuantity(100);
         db.partsInventory['raw-1'] = 0;
 
-        const decision = dept.orderPartsForPlannedOrders();
+        const decision = await dept.orderPartsForPlannedOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(1);
@@ -98,7 +98,7 @@ describe('orderPartsForPlannedOrders', () => {
         db.scheduledProductionOrders[0].increaseCompletedQuantity(100);
         db.partsInventory['raw-1'] = 23;
 
-        const decision = dept.orderPartsForPlannedOrders();
+        const decision = await dept.orderPartsForPlannedOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(0);
@@ -114,7 +114,7 @@ describe('orderPartsForPlannedOrders', () => {
         db.partsInventory['raw-1'] = 0;
         db.partsInventory['raw-2'] = 0;
 
-        const decision = dept.orderPartsForPlannedOrders();
+        const decision = await dept.orderPartsForPlannedOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(2);

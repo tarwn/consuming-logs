@@ -27,12 +27,12 @@ function getTestConfig() {
 }
 
 describe('planUnscheduledProductionOrders', () => {
-    test('no unscheduled orders results in no decisions', () => {
+    test('no unscheduled orders results in no decisions', async () => {
         const config = getTestConfig();
         const db = new CentralDatabase(config);
         const dept = new PlanningDepartment(config, db);
 
-        const decision = dept.planUnscheduledProductionOrders();
+        const decision = await dept.planUnscheduledProductionOrders();
 
         expect(decision.getActionCount()).toBe(0);
     });
@@ -44,7 +44,7 @@ describe('planUnscheduledProductionOrders', () => {
         const dept = new PlanningDepartment(config, db);
         const producer = new FakeProducer();
 
-        const decision = dept.planUnscheduledProductionOrders();
+        const decision = await dept.planUnscheduledProductionOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(1);
@@ -63,7 +63,7 @@ describe('planUnscheduledProductionOrders', () => {
         const dept = new PlanningDepartment(config, db);
         const producer = new FakeProducer();
 
-        const decision = dept.planUnscheduledProductionOrders();
+        const decision = await dept.planUnscheduledProductionOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(5);

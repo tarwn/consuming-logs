@@ -37,7 +37,7 @@ describe('payForReceivedPurchaseOrders', () => {
         const producer = new FakeProducer();
         const dept = new FinanceDepartment(config, db);
 
-        const decision = dept.payForReceivedPurchaseOrders();
+        const decision = await dept.payForReceivedPurchaseOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(0);
@@ -52,7 +52,7 @@ describe('payForReceivedPurchaseOrders', () => {
         const dept = new FinanceDepartment(config, db);
         db.unbilledPurchaseOrders.push(new PurchaseOrder('po-123', 'raw-1', 100, 1.50));
 
-        const decision = dept.payForReceivedPurchaseOrders();
+        const decision = await dept.payForReceivedPurchaseOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(1);
@@ -69,7 +69,7 @@ describe('payForReceivedPurchaseOrders', () => {
         db.unbilledPurchaseOrders.push(new PurchaseOrder('po-123', 'raw-1', 100, 1.50));
         db.unbilledPurchaseOrders.push(new PurchaseOrder('po-123', 'raw-1', 100, 1.50));
 
-        const decision = dept.payForReceivedPurchaseOrders();
+        const decision = await dept.payForReceivedPurchaseOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(3);
@@ -85,7 +85,7 @@ describe('billForShippedSalesOrders', () => {
         const producer = new FakeProducer();
         const dept = new FinanceDepartment(config, db);
 
-        const decision = dept.billForShippedSalesOrders();
+        const decision = await dept.billForShippedSalesOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(0);
@@ -100,7 +100,7 @@ describe('billForShippedSalesOrders', () => {
         const dept = new FinanceDepartment(config, db);
         db.shippedSalesOrders.push(new SalesOrder('so-123', SINGLE_PART_PRODUCT, 100, 1.23));
 
-        const decision = dept.billForShippedSalesOrders();
+        const decision = await dept.billForShippedSalesOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(1);
@@ -121,7 +121,7 @@ describe('billForShippedSalesOrders', () => {
             db.shippedSalesOrders.push(new SalesOrder(`so-123-${i}`, SINGLE_PART_PRODUCT, 100, 1.23));
         }
 
-        const decision = dept.billForShippedSalesOrders();
+        const decision = await dept.billForShippedSalesOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(3);

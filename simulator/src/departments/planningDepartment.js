@@ -7,11 +7,11 @@ module.exports = class PlanningDepartment {
         this._centralDatabase = centralDatabase;
     }
 
-    planUnscheduledProductionOrders() {
+    async planUnscheduledProductionOrders() {
         const actions = this._centralDatabase.unscheduledProductionOrders.map((order) => {
-            return (db, producer) => {
-                db.planProductionOrder(order);
-                return producer.publish(new ProductionOrderPlannedEvent(order));
+            return async (db, producer) => {
+                await db.planProductionOrder(order);
+                await producer.publish(new ProductionOrderPlannedEvent(order));
             };
         });
         return new DepartmentDecision(actions);

@@ -29,7 +29,7 @@ function getTestConfig() {
 }
 
 describe('generateOrdersIfCapacityIsAvailable', () => {
-    test('no available capacity results in booking no new sales', () => {
+    test('no available capacity results in booking no new sales', async () => {
         const config = getTestConfig();
         const db = new CentralDatabase(config);
         const dept = new SalesDepartment(config, db);
@@ -37,7 +37,7 @@ describe('generateOrdersIfCapacityIsAvailable', () => {
             config.maximumIntervalsToSchedule;
         db.scheduledProductionOrders.push(new ProductionOrder('so-123', SINGLE_PART_PRODUCT, maxCapacity));
 
-        const decision = dept.generateOrdersIfCapacityIsAvailable();
+        const decision = await dept.generateOrdersIfCapacityIsAvailable();
 
         expect(decision.getActionCount()).toBe(0);
     });
@@ -51,12 +51,13 @@ describe('generateOrdersIfCapacityIsAvailable', () => {
             config.maximumIntervalsToSchedule) - config.minimumOrderSize;
         db.scheduledProductionOrders.push(new ProductionOrder('so-123', SINGLE_PART_PRODUCT, usedCapacity));
 
-        const decision = dept.generateOrdersIfCapacityIsAvailable();
+        const decision = await dept.generateOrdersIfCapacityIsAvailable();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(1);
         expect(db.openSalesOrders).toHaveLength(1);
         expect(producer.messages).toHaveLength(1);
-        expect(db.getAvailableProductionScheduleCapacity()).toBe(0);
+        const availableCapacity = await db.getAvailableProductionScheduleCapacity();
+        expect(availableCapacity).toBe(0);
     });
 });

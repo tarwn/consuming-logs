@@ -10,7 +10,7 @@ module.exports = class PurchasingDepartment {
         this._centralDatabase = centralDatabase;
     }
 
-    orderPartsForPlannedOrders() {
+    async orderPartsForPlannedOrders() {
         const plannedParts = PurchasingDepartment._calculateNecessaryParts(
             this._centralDatabase.scheduledProductionOrders,
             this._centralDatabase.productCatalog
@@ -29,8 +29,8 @@ module.exports = class PurchasingDepartment {
                 this._centralDatabase.partsCatalog
             );
 
-            return (db, producer) => {
-                db.placePurchaseOrder(order);
+            return async (db, producer) => {
+                await db.placePurchaseOrder(order);
                 const shipment = new Shipment(
                     null,
                     'PurchaseOrder',
@@ -38,8 +38,8 @@ module.exports = class PurchasingDepartment {
                     order.partNumber,
                     order.orderQuantity
                 );
-                db.trackPurchaseOrderShipment(shipment);
-                return producer.publish(new PurchaseOrderPlacedEvent(order, shipment));
+                await db.trackPurchaseOrderShipment(shipment);
+                await producer.publish(new PurchaseOrderPlacedEvent(order, shipment));
             };
         });
         return new DepartmentDecision(actions);

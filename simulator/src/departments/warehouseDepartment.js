@@ -12,7 +12,7 @@ module.exports = class WarehouseDepartment {
         this._centralDatabase = centralDatabase;
     }
 
-    receivePurchasedParts() {
+    async receivePurchasedParts() {
         const arrivingShipments = this._centralDatabase.trackedShipments
             .filter(s => s.orderType === 'PurchaseOrder' && s.hasOrderArrived());
 
@@ -26,10 +26,10 @@ module.exports = class WarehouseDepartment {
         });
 
         const actions = arrivingPurchaseOrders.map((avp) => {
-            return (db, producer) => {
-                const newTotal = db.receivePurchaseOrder(avp.purchaseOrder);
-                db.stopTrackingShipment(avp.shipment.shipmentNumber);
-                return producer.publish([
+            return async (db, producer) => {
+                const newTotal = await db.receivePurchaseOrder(avp.purchaseOrder);
+                await db.stopTrackingShipment(avp.shipment.shipmentNumber);
+                await producer.publish([
                     new PurchaseOrderReceivedEvent(avp.purchaseOrder),
                     new PartsInventoryIncreasedEvent(
                         avp.purchaseOrder.partNumber,
@@ -43,7 +43,7 @@ module.exports = class WarehouseDepartment {
         return new DepartmentDecision(actions);
     }
 
-    shipCompletedSalesOrders() {
+    async shipCompletedSalesOrders() {
         const readyToShip = this._centralDatabase.scheduledProductionOrders
             .filter(po => po.isComplete)
             .map((po) => {
@@ -56,8 +56,8 @@ module.exports = class WarehouseDepartment {
             });
 
         const actions = readyToShip.map((o) => {
-            return (db, producer) => {
-                db.stageProductionOrderToShip(o.productionOrder.productionOrderNumber);
+            return async (db, producer) => {
+                await db.stageProductionOrderToShip(o.productionOrder.productionOrderNumber);
                 const shipment = new Shipment(
                     null,
                     'SalesOrder',
@@ -65,35 +65,35 @@ module.exports = class WarehouseDepartment {
                     o.salesOrder.partNumber,
                     o.salesOrder.orderQuantity
                 );
-                db.shipShipment(shipment);
-                db.indicateSalesOrderHasShipped(o.salesOrder.salesOrderNumber);
-                return producer.publish(new SalesOrderShippedEvent(shipment, o.salesOrder));
+                await db.shipShipment(shipment);
+                await db.indicateSalesOrderHasShipped(o.salesOrder.salesOrderNumber);
+                await producer.publish(new SalesOrderShippedEvent(shipment, o.salesOrder));
             };
         });
         return new DepartmentDecision(actions);
     }
 
-    stopTrackingDeliveredSalesOrders() {
+    async stopTrackingDeliveredSalesOrders() {
         const arrivingShipments = this._centralDatabase.trackedShipments
             .filter(s => s.orderType === 'SalesOrder' && s.hasOrderArrived());
 
         const actions = arrivingShipments.map((s) => {
-            return (db, producer) => {
-                db.stopTrackingShipment(s.shipmentNumber);
-                return producer.publish(new ShipmentArrivedEvent(s));
+            return async (db, producer) => {
+                await db.stopTrackingShipment(s.shipmentNumber);
+                await producer.publish(new ShipmentArrivedEvent(s));
             };
         });
         return new DepartmentDecision(actions);
     }
 
-    updateTrackingForInTransitShipments() {
+    async updateTrackingForInTransitShipments() {
         const actions = this._centralDatabase.trackedShipments
             .filter(s => !s.hasOrderArrived())
             .map((s) => {
-                return (db, producer) => {
+                return async (db, producer) => {
                     s.decrementShipTime();
-                    db.updateTrackedShipment(s);
-                    return producer.publish(new ShipmentTrackingUpdatedEvent(s));
+                    await db.updateTrackedShipment(s);
+                    await producer.publish(new ShipmentTrackingUpdatedEvent(s));
                 };
             });
         return new DepartmentDecision(actions);

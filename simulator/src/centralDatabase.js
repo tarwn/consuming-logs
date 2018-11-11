@@ -75,7 +75,7 @@ module.exports = class CentralDatabase {
             this.maximumIntervalsToSchedule;
     }
 
-    getAvailableProductionScheduleCapacity() {
+    async getAvailableProductionScheduleCapacity() {
         const calculateUsedCapacity = (total, productionOrder) => {
             return total + (productionOrder.orderQuantity - productionOrder.completedQuantity);
         };
@@ -92,7 +92,7 @@ module.exports = class CentralDatabase {
             this.unscheduledProductionOrders.reduce(calculateUsedCapacity, 0);
     }
 
-    placeSalesOrder(salesOrder) {
+    async placeSalesOrder(salesOrder) {
         // assign a sales order number
         salesOrder.assignNumber(`so-${this._seed}-${this._counter++}`);
         this.openSalesOrders.push(salesOrder);
@@ -100,7 +100,7 @@ module.exports = class CentralDatabase {
         this.unscheduledProductionOrders.push(productionOrder);
     }
 
-    planProductionOrder(productionOrder) {
+    async planProductionOrder(productionOrder) {
         const orderIndex = this.unscheduledProductionOrders.findIndex((o) => {
             return o.productionOrderNumber === productionOrder.productionOrderNumber;
         });
@@ -114,27 +114,27 @@ module.exports = class CentralDatabase {
         }
     }
 
-    placePurchaseOrder(purchaseOrder) {
+    async placePurchaseOrder(purchaseOrder) {
         // assign a purchase order number
         purchaseOrder.assignNumber(`purch-${this._seed}-${this._counter++}`);
         this.openPurchaseOrders.push(purchaseOrder);
     }
 
-    trackPurchaseOrderShipment(shipment) {
+    async trackPurchaseOrderShipment(shipment) {
         shipment.assignNumber(`ship-${this._seed}-${this._counter++}`);
         shipment.assignShippingTime(3);
         this.trackedShipments.push(shipment);
     }
 
     /* eslint-disable */
-    updatePurchaseOrder(purchaseOrder) {
+    async  updatePurchaseOrder(purchaseOrder) {
         // assume the order has been modified and references
         //  the same one in the collection and is therefor
         //  already updated
     }
     /* eslint-enable */
 
-    receivePurchaseOrder(purchaseOrder) {
+    async receivePurchaseOrder(purchaseOrder) {
         // shift from open to closed
         const orderIndex = this.openPurchaseOrders.findIndex((o) => {
             return o.purchaseOrderNumber === purchaseOrder.purchaseOrderNumber;
@@ -157,7 +157,7 @@ module.exports = class CentralDatabase {
         return this.partsInventory[purchaseOrder.partNumber];
     }
 
-    payPurchaseOrder(purchaseOrder) {
+    async payPurchaseOrder(purchaseOrder) {
         const orderIndex = this.unbilledPurchaseOrders.findIndex((o) => {
             return o.purchaseOrderNumber === purchaseOrder.purchaseOrderNumber;
         });
@@ -177,7 +177,7 @@ module.exports = class CentralDatabase {
         this.cash += -1 * purchaseOrder.totalPrice;
     }
 
-    consumeParts(partNumber, quantity) {
+    async consumeParts(partNumber, quantity) {
         if (!this.partsInventory[partNumber]) {
             throw new Error(`Part ${partNumber} is not in inventory`);
         }
@@ -192,7 +192,7 @@ module.exports = class CentralDatabase {
         };
     }
 
-    produceFinishedGoods(productionOrderNumber, partNumber, quantity) {
+    async produceFinishedGoods(productionOrderNumber, partNumber, quantity) {
         const order = this.scheduledProductionOrders
             .find(o => o.productionOrderNumber === productionOrderNumber);
 
@@ -216,21 +216,21 @@ module.exports = class CentralDatabase {
         };
     }
 
-    storeFinishedGoods(partNumber, quantity) {
+    async storeFinishedGoods(partNumber, quantity) {
         if (!this.finishedInventory[partNumber]) {
             this.finishedInventory[partNumber] = 0;
         }
         this.finishedInventory[partNumber] += quantity;
     }
 
-    scrapFinishedGoods(partNumber, quantity) {
+    async scrapFinishedGoods(partNumber, quantity) {
         if (!this.scrappedInventory[partNumber]) {
             this.scrappedInventory[partNumber] = 0;
         }
         this.scrappedInventory[partNumber] += quantity;
     }
 
-    stageProductionOrderToShip(productionOrderNumber) {
+    async stageProductionOrderToShip(productionOrderNumber) {
         const orderIndex = this.scheduledProductionOrders.findIndex((o) => {
             return o.productionOrderNumber === productionOrderNumber;
         });
@@ -244,7 +244,7 @@ module.exports = class CentralDatabase {
         }
     }
 
-    indicateSalesOrderHasShipped(salesOrderNumber) {
+    async indicateSalesOrderHasShipped(salesOrderNumber) {
         const orderIndex = this.openSalesOrders.findIndex((o) => {
             return o.salesOrderNumber === salesOrderNumber;
         });
@@ -258,21 +258,21 @@ module.exports = class CentralDatabase {
         }
     }
 
-    shipShipment(shipment) {
+    async shipShipment(shipment) {
         shipment.assignNumber(`ship-${this._seed}-${this._counter++}`);
         shipment.assignShippingTime(3);
         this.trackedShipments.push(shipment);
     }
 
     /* eslint-disable */
-    updateTrackedShipment(shipment) {
+    async updateTrackedShipment(shipment) {
         // assume the shipment has been modified and references
         //  the same one in the collection and is therefore
         //  already updated
     }
     /* eslint-enable */
 
-    stopTrackingShipment(shipmentNumber) {
+    async stopTrackingShipment(shipmentNumber) {
         const orderIndex = this.trackedShipments.findIndex((s) => {
             return s.shipmentNumber === shipmentNumber;
         });
@@ -286,7 +286,7 @@ module.exports = class CentralDatabase {
         }
     }
 
-    invoiceForSalesOrder(salesOrderNumber) {
+    async invoiceForSalesOrder(salesOrderNumber) {
         const orderIndex = this.shippedSalesOrders.findIndex((o) => {
             return o.salesOrderNumber === salesOrderNumber;
         });
@@ -300,7 +300,7 @@ module.exports = class CentralDatabase {
         }
     }
 
-    receivePaymentForSalesOrder(salesOrder, amount) {
+    async receivePaymentForSalesOrder(salesOrder, amount) {
         this.financialLedger.push({
             amount,
             type: 'SalesOrder',

@@ -10,22 +10,22 @@ module.exports = class FinanceDepartment {
         this._centralDatabase = centralDatabase;
     }
 
-    payForReceivedPurchaseOrders() {
+    async payForReceivedPurchaseOrders() {
         const actions = this._centralDatabase.unbilledPurchaseOrders.map((po) => {
-            return (db, producer) => {
-                db.payPurchaseOrder(po);
-                return producer.publish(new PurchaseOrderPaidEvent(po, po.totalPrice));
+            return async (db, producer) => {
+                await db.payPurchaseOrder(po);
+                await producer.publish(new PurchaseOrderPaidEvent(po, po.totalPrice));
             };
         });
         return new DepartmentDecision(actions);
     }
 
-    billForShippedSalesOrders() {
+    async billForShippedSalesOrders() {
         const actions = this._centralDatabase.shippedSalesOrders.map((so) => {
-            return (db, producer) => {
-                db.invoiceForSalesOrder(so.salesOrderNumber);
-                db.receivePaymentForSalesOrder(so, so.getTotalAmountDue());
-                return producer.publish([
+            return async (db, producer) => {
+                await db.invoiceForSalesOrder(so.salesOrderNumber);
+                await db.receivePaymentForSalesOrder(so, so.getTotalAmountDue());
+                await producer.publish([
                     new SalesOrderInvoicedEvent(so, so.getTotalAmountDue()),
                     new SalesOrderInvoicePaidEvent(so, so.getTotalAmountDue())
                 ]);

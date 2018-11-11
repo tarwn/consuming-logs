@@ -41,7 +41,7 @@ describe('receivePurchasedParts', () => {
         const dept = new WarehouseDepartment(config, db);
         const producer = new FakeProducer();
 
-        const decision = dept.receivePurchasedParts();
+        const decision = await dept.receivePurchasedParts();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(0);
@@ -56,7 +56,7 @@ describe('receivePurchasedParts', () => {
         db.shipShipment(new Shipment(null, 'PurchaseOrder', 'po-123', 'raw-1', 1));
         db.trackedShipments[0].assignShippingTime(1);
 
-        const decision = dept.receivePurchasedParts();
+        const decision = await dept.receivePurchasedParts();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(0);
@@ -72,7 +72,7 @@ describe('receivePurchasedParts', () => {
         db.shipShipment(new Shipment(null, 'PurchaseOrder', 'po-123', 'raw-1', 1));
         db.trackedShipments[0].assignShippingTime(0);
 
-        const decision = dept.receivePurchasedParts();
+        const decision = await dept.receivePurchasedParts();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(1);
@@ -97,7 +97,7 @@ describe('receivePurchasedParts', () => {
             db.trackedShipments[i].assignShippingTime(0);
         }
 
-        const decision = dept.receivePurchasedParts();
+        const decision = await dept.receivePurchasedParts();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(3);
@@ -119,7 +119,7 @@ describe('shipCompletedSalesOrders', () => {
         const dept = new WarehouseDepartment(config, db);
         db.scheduledProductionOrders.push(new ProductionOrder('so-123', SINGLE_PART_PRODUCT, 100));
 
-        const decision = dept.shipCompletedSalesOrders();
+        const decision = await dept.shipCompletedSalesOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(0);
@@ -137,7 +137,7 @@ describe('shipCompletedSalesOrders', () => {
         db.scheduledProductionOrders.push(po);
         db.produceFinishedGoods(po.productionOrderNumber, SINGLE_PART_PRODUCT, 100);
 
-        const decision = dept.shipCompletedSalesOrders();
+        const decision = await dept.shipCompletedSalesOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(1);
@@ -161,7 +161,7 @@ describe('shipCompletedSalesOrders', () => {
             db.produceFinishedGoods(po.productionOrderNumber, SINGLE_PART_PRODUCT, 100);
         }
 
-        const decision = dept.shipCompletedSalesOrders();
+        const decision = await dept.shipCompletedSalesOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(3);
@@ -180,7 +180,7 @@ describe('stopTrackingDeliveredSalesOrders', () => {
         const producer = new FakeProducer();
         const dept = new WarehouseDepartment(config, db);
 
-        const decision = dept.stopTrackingDeliveredSalesOrders();
+        const decision = await dept.stopTrackingDeliveredSalesOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(0);
@@ -197,7 +197,7 @@ describe('stopTrackingDeliveredSalesOrders', () => {
         db.shipShipment(new Shipment(null, 'SalesOrder', 'so-123', SINGLE_PART_PRODUCT, 100));
         db.trackedShipments[0].assignShippingTime(1);
 
-        const decision = dept.stopTrackingDeliveredSalesOrders();
+        const decision = await dept.stopTrackingDeliveredSalesOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(0);
@@ -214,7 +214,7 @@ describe('stopTrackingDeliveredSalesOrders', () => {
         db.shipShipment(new Shipment(null, 'SalesOrder', 'so-123', SINGLE_PART_PRODUCT, 100));
         db.trackedShipments[0].assignShippingTime(0);
 
-        const decision = dept.stopTrackingDeliveredSalesOrders();
+        const decision = await dept.stopTrackingDeliveredSalesOrders();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(1);
@@ -231,7 +231,7 @@ describe('updateTrackingForInTransitShipments', () => {
         const producer = new FakeProducer();
         const dept = new WarehouseDepartment(config, db);
 
-        const decision = dept.updateTrackingForInTransitShipments();
+        const decision = await dept.updateTrackingForInTransitShipments();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(0);
@@ -246,7 +246,7 @@ describe('updateTrackingForInTransitShipments', () => {
         db.shipShipment(new Shipment(null, 'PurchaseOrder', 'po-123', 'raw-1', 1));
         db.trackedShipments[0].assignShippingTime(0);
 
-        const decision = dept.updateTrackingForInTransitShipments();
+        const decision = await dept.updateTrackingForInTransitShipments();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(0);
@@ -260,7 +260,7 @@ describe('updateTrackingForInTransitShipments', () => {
         db.openPurchaseOrders.push(new PurchaseOrder('po-123', 'raw-1', 1, 1));
         db.shipShipment(new Shipment('PurchaseOrder', 'po-123', 'raw-1', 1));
 
-        const decision = dept.updateTrackingForInTransitShipments();
+        const decision = await dept.updateTrackingForInTransitShipments();
         await decision.executeAll(db, producer);
 
         expect(decision.getActionCount()).toBe(1);

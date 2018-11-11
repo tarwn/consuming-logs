@@ -8,10 +8,10 @@ module.exports = class SalesDepartment {
         this._centralDatabase = centralDatabase;
     }
 
-    generateOrdersIfCapacityIsAvailable() {
-        let availableCapacity = this._centralDatabase.getAvailableProductionScheduleCapacity();
+    async generateOrdersIfCapacityIsAvailable() {
+        /* eslint-disable-next-line */
+        let availableCapacity = await this._centralDatabase.getAvailableProductionScheduleCapacity();
         const availableProducts = this._centralDatabase.productCatalog.map(p => p.partNumber);
-
         const potentialOrders = [];
         while (availableCapacity >= this._config.minimumOrderSize) {
             const newOrder = SalesDepartment._generateNewOrder(
@@ -24,9 +24,9 @@ module.exports = class SalesDepartment {
         }
 
         const actions = potentialOrders.map((salesOrder) => {
-            return (db, producer) => {
-                db.placeSalesOrder(salesOrder);
-                return producer.publish(new SalesOrderPlacedEvent(salesOrder));
+            return async (db, producer) => {
+                await db.placeSalesOrder(salesOrder);
+                await producer.publish(new SalesOrderPlacedEvent(salesOrder));
             };
         });
         return new DepartmentDecision(actions);

@@ -12,12 +12,12 @@ module.exports = class ProductionDepartment {
         this._centralDatabase = centralDatabase;
     }
 
-    runPlannedProductionOrders() {
+    async runPlannedProductionOrders() {
         const ordersToRun = this._centralDatabase.scheduledProductionOrders
             .slice(0, this._config.productionLines);
 
         const actions = ordersToRun.map((o) => {
-            return (db, producer) => {
+            return async (db, producer) => {
                 const maxToProduce = Math.min(
                     o.getRemainingQuantity(),
                     this._config.productionCapacityPerInterval
@@ -47,7 +47,7 @@ module.exports = class ProductionDepartment {
         return new DepartmentDecision(actions);
     }
 
-    _produce(quantity, o, bom, db, producer) {
+    async _produce(quantity, o, bom, db, producer) {
         const qtyScrapped = Math.round(quantity
             * this._config.productionScrapPercentage);
         const qtyProduced = quantity - qtyScrapped;
@@ -55,8 +55,8 @@ module.exports = class ProductionDepartment {
         const events = [];
 
         // consume input
-        Object.keys(bom.ingredients).forEach((i) => {
-            const { totalRemaining } = db.consumeParts(i, quantity * bom.ingredients[i]);
+        Object.keys(bom.ingredients).forEach(async (i) => {
+            const { totalRemaining } = await db.consumeParts(i, quantity * bom.ingredients[i]);
             events.push(new PartsInventoryConsumedEvent(
                 i,
                 quantity * bom.ingredients[i],
@@ -71,7 +71,7 @@ module.exports = class ProductionDepartment {
                 totalInventory,
                 isComplete,
                 order
-            } = db.produceFinishedGoods(o.productionOrderNumber, o.partNumber, qtyProduced);
+            } = await db.produceFinishedGoods(o.productionOrderNumber, o.partNumber, qtyProduced);
 
             events.push(new FinishedGoodsProducedEvent(
                 o.partNumber,
@@ -92,7 +92,7 @@ module.exports = class ProductionDepartment {
         }
 
         if (qtyScrapped > 0) {
-            db.scrapFinishedGoods(qtyScrapped);
+            await db.scrapFinishedGoods(qtyScrapped);
             events.push(new FinishedGoodsScrappedEvent(
                 o.partNumber,
                 qtyScrapped,
