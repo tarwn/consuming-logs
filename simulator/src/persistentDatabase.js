@@ -1,5 +1,6 @@
 const levelup = require('levelup');
 const leveldown = require('leveldown');
+const encode = require('encoding-down');
 const FinishedGood = require('./dtos/finishedGood');
 const FinishedGoodBOM = require('./dtos/finishedGoodBOM');
 const RawPart = require('./dtos/rawPart');
@@ -13,7 +14,7 @@ module.exports = class PersistentDatabase {
 
         this._plantConfig = plantConfig;
         this._simulatorConfig = simulatorConfig;
-        this._db = levelup(leveldown(`./db/${simulatorConfig.kafka_topic}`));
+        this._db = levelup(encode(leveldown(`./db/${simulatorConfig.kafka_topic}`), { valueEncoding: 'json' }));
 
         this.cash = plantConfig.cash || 0;
         this.version = '';
@@ -95,52 +96,58 @@ module.exports = class PersistentDatabase {
             unscheduledProductionOrders.reduce(calculateUsedCapacity, 0);
     }
 
-    // raw database access
-
-    // note to self: straight get/set is a poor idea for index
-    //  - instead make them individual entries and use createReadStream
-    //  when you need the whole set, or individual put/del calls by
-    //  convention to add/clear them  (inside a batch call for atomicity)
+    // database access
 
     async _addScheduledProductionOrder(order) {
-        // todo, replace this, super dangerous
-        const currentIndex = await PersistentDatabase._indexOrEmpty(async () => {
-            const keys = await this._db.get('Index:ProductionOrders:Scheduled');
-            return keys.map(async key => this._db.get(key));
-        });
-
-        currentIndex.push(`ProductionOrder:${order.productionOrderNumber}`);
         await this._db.batch([
             { type: 'put', key: `ProductionOrder:${order.productionOrderNumber}`, value: order },
-            { type: 'put', key: 'Index:ProductionOrders:Scheduled', value: currentIndex }
+            { type: 'put', key: `Index:ProductionOrders:Scheduled:${order.productionOrderNumber}`, value: `ProductionOrder:${order.productionOrderNumber}` }
         ]);
-
-        // better
-        // await this._db.batch([
-        //     { type: 'put', key: `ProductionOrder:${order.productionOrderNumber}`, value: order },
-        //     { type: 'put', key: `'Index:ProductionOrders:Scheduled:${order.productionOrderNumber}'`, value: 'true' }
-        // ]);
     }
 
     async _getScheduledProductionOrders() {
-        return PersistentDatabase._indexOrEmpty(async () => {
-            const keys = await this._db.get('Index:ProductionOrders:Scheduled');
-            return keys.map(async key => this._db.get(key));
-        });
+        return this._getIndexedValues('Index:ProductionOrders:Scheduled:');
     }
 
     async _addUnscheduledProductionOrder(order) {
-        this._noop = order;
+        await this._db.batch([
+            { type: 'put', key: `ProductionOrder:${order.productionOrderNumber}`, value: order },
+            { type: 'put', key: `Index:ProductionOrders:Unscheduled:${order.productionOrderNumber}`, value: `ProductionOrder:${order.productionOrderNumber}` }
+        ]);
     }
 
     async _getUnscheduledProductionOrders() {
-        return PersistentDatabase._indexOrEmpty(async () => {
-            const keys = await this._db.get('Index:ProductionOrders:Unscheduled');
-            return keys.map(async key => this._db.get(key));
-        });
+        return this._getIndexedValues('Index:ProductionOrders:Unscheduled:');
     }
 
     // helpers
+    async _getIndexedValues(indexPrefix) {
+        // search from indexPrefix to < one character past indexPrefix
+        const indexPrefixEnd = indexPrefix.slice(0, -1) +
+            String.fromCharCode(indexPrefix.slice(-1).charCodeAt(0) + 1);
+
+        const index = await new Promise((resolve, reject) => {
+            const indexValues = [];
+            this._db.createReadStream({
+                gte: indexPrefix,
+                lt: indexPrefixEnd,
+                keys: true,
+                values: true
+            })
+                .on('data', (data) => {
+                    indexValues.push(data.value);
+                })
+                .on('error', (error) => {
+                    reject(error);
+                })
+                .on('close', () => { })
+                .on('end', () => {
+                    resolve(indexValues);
+                });
+        });
+        return Promise.all(index.map(key => this._db.get(key)));
+    }
+
     static async _indexOrEmpty(func) {
         try {
             return await func();
